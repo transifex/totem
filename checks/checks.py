@@ -7,6 +7,9 @@ ERROR_INVALID_CONFIG = 'invalid_config'
 ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
 
 
+TYPE_BRANCH_NAME = 'branch_name'
+
+
 class Check:
     """A base class for all classes that want to perform checks.
 
@@ -20,32 +23,31 @@ class Check:
     together.
     """
 
-    def __init__(self, config, content):
+    def __init__(self, config):
         """Constructor.
 
         :param CheckConfig config: the configuration to use when performing the check
             in case specific things need to be taken into account
-        :param dict content: contains parameters with the actual content to check,
-            e.g. the commit message string for a checker that deals with commit messages
         """
         self._config = config
-        self._content = content
 
-    def run(self):
+    def run(self, content):
         """Execute the check for the current parameters and return the result.
 
+        :param dict content: contains parameters with the actual content to check,
+            e.g. the commit message string for a checker that deals with commit messages
         :return: the result of performing the check
         :rtype: CheckResult
         """
         raise NotImplemented()
 
+    @property
+    def check_type(self):
+        return self._config.check_type
+
     def _from_config(self, name, default=None):
         """Return a parameter from the configuration options dictionary."""
         return self._config.options.get(name, default)
-
-    def _from_content(self, name, default=None):
-        """Return a parameter from the content dictionary."""
-        return self._content.get(name, default)
 
     def _get_success(self, **details):
         """Return a successful result."""
@@ -79,14 +81,16 @@ class Check:
 class BranchNameCheck(Check):
     """Checks whether or not a branch name follows a certain format."""
 
-    def run(self):
+    def run(self, content):
         """Check if a branch name has a certain prefix.
 
+        :param dict content: contains parameters with the actual content to check,
+            e.g. the commit message string for a checker that deals with commit messages
         :return: the result of the check that was performed
         :rtype: CheckResult
         """
         prefix = self._from_config('prefix')
-        branch_name = self._from_content('branch')
+        branch_name = content.get('branch')
 
         if not branch_name:
             return self._get_error(
@@ -108,3 +112,20 @@ class BranchNameCheck(Check):
             )
 
         return self._get_success()
+
+
+class CheckFactory:
+    """Responsible for creating Check subclasses."""
+
+    @staticmethod
+    def create(config):
+        """Create the proper Check subclass based on the given configuration.
+
+        :param CheckConfig config: the configuration object to use
+        :return: returns a check object
+        :rtype: Check
+        """
+        config_type = config.check_type
+
+        if config_type == TYPE_BRANCH_NAME:
+            return BranchNameCheck(config)

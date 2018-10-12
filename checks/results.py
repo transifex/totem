@@ -31,11 +31,12 @@ class CheckResult:
 class CheckSuiteResults:
     """Contains the results of all the checks of a check suite that were executed."""
 
-    def __init__(self, results):
-        """Constructor.
+    def __init__(self):
+        self.results = {}
 
-        :param list results: a list of CheckResult objects
+    def add(self, result):
+        """Store the given result.
+
+        :param CheckResult result: the result to store
         """
-        self.results = {
-            result.id: result for result in results
-        }
+        self.results[result.config.check_type] = result
