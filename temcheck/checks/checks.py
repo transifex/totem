@@ -1,3 +1,5 @@
+import re
+
 from temcheck.checks.results import CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL
 
 
@@ -88,7 +90,7 @@ class BranchNameCheck(Check):
         :return: the result of the check that was performed
         :rtype: CheckResult
         """
-        prefix = self._from_config('prefix')
+        pattern = self._from_config('pattern')
         branch_name = content.get('branch')
 
         if not branch_name:
@@ -97,17 +99,20 @@ class BranchNameCheck(Check):
                 message='Branch name not defined or empty',
             )
 
-        if not prefix:
+        if not pattern:
             return self._get_error(
                 ERROR_INVALID_CONFIG,
-                message='Branch name prefix not defined or empty',
+                message='Branch name regex pattern not defined or empty',
             )
 
-        success = branch_name.startswith(prefix)
+        success = re.match(pattern, branch_name) is not None
         if not success:
             return self._get_failure(
                 ERROR_INVALID_BRANCH_NAME,
-                message='Branch name does not begin with "{}" prefix'.format(prefix)
+                message='Branch name "{}" doesn\'t match pattern: "{}"'.format(
+                    branch_name,
+                    pattern,
+                )
             )
 
         return self._get_success()

@@ -23,6 +23,9 @@ def run_suite(config, pr_url):
     factory = ContentProviderFactory(full_repo_name, pr_number)
 
     suite = CheckSuite(config, factory)
-    results = suite.run()
+    suite.run()
+
+    for result in suite.results.results.items():
+        print(result)
 
     # TODO: do something with the results (e.g. block merging)

@@ -33,6 +33,9 @@ class CheckResult:
             self.details,
         )
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class CheckSuiteResults:
     """Contains the results of all the checks of a check suite that were executed."""
