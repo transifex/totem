@@ -1,1 +1,2 @@
 PyGithub==1.40a4
+click
