@@ -45,7 +45,7 @@ class BranchNameContentProvider(GithubContentProvider):
     def get_content(self):
         """Return a dictionary that contains the current branch name."""
         return {
-            'branch': self._get_branch_name()
+            'branch': self._get_branch_name(),
         }
 
     def _get_branch_name(self):

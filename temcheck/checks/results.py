@@ -2,6 +2,13 @@ STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed
 STATUS_ERROR = 'error'  # The check could not be executed because of an error
 
+ERROR_INVALID_CONTENT = 'invalid_content'
+ERROR_INVALID_CONFIG = 'invalid_config'
+ERROR_GENERIC = 'generic_error'
+
+ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
+
+
 
 class CheckResult:
     """Contains the results of a single Check that was performed."""
@@ -26,7 +33,7 @@ class CheckResult:
         return self.status == STATUS_PASS
 
     def __str__(self):
-        return 'CheckResult type={}, status={}, error_code={}, details={}'.format(
+        return 'CheckResult type="{}", status="{}", error_code="{}", details={}'.format(
             self.config.check_type,
             self.status,
             self.error_code,

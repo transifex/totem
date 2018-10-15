@@ -1,6 +1,8 @@
 from temcheck.checks.checks import CheckFactory
 from temcheck.checks.config import CheckConfig, FAILURE_LEVEL_ERROR
-from temcheck.checks.results import CheckSuiteResults
+from temcheck.checks.results import (
+    CheckResult, CheckSuiteResults, STATUS_ERROR, ERROR_GENERIC
+)
 
 
 class CheckSuite:
@@ -23,7 +25,7 @@ class CheckSuite:
             all checks, formatted like:
             {
               'branch_name': {
-                'regex': '^TX-[0-9]+\-[\w\d\-]+$',
+                'pattern': '^TX-[0-9]+\-[\w\d\-]+$',
                 'failure_level': 'warning'
               },
               'pr_description_checkboxes': {
@@ -61,8 +63,15 @@ class CheckSuite:
         # along with a content provider and these are fed to
         for config in self.configs.values():
             check = CheckFactory.create(config)
-            content = self.content_provider_factory.create(check).get_content()
-            result = check.run(content)
+
+            try:
+                content = self.content_provider_factory.create(check).get_content()
+                result = check.run(content)
+            except Exception as e:
+                result = CheckResult(
+                    config, STATUS_ERROR, ERROR_GENERIC, message=str(e)
+                )
+
             self.results.add(result)
 
     def _create_config(self, check_type, config_dict):

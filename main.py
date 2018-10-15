@@ -16,7 +16,6 @@ def run_suite(config, pr_url):
     :param dict config: the full configuration of the suite, as retrieved from the CI,
         formatted as described in CheckSuite
     :param str pr_url: the URL of the pull request as retrieved from the CI
-    :return:
     """
 
     full_repo_name, pr_number = parse_pr_url(pr_url)

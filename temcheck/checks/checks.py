@@ -1,11 +1,9 @@
 import re
 
-from temcheck.checks.results import CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL
-
-
-ERROR_INVALID_CONTENT = 'invalid_content'
-ERROR_INVALID_CONFIG = 'invalid_config'
-ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
+from temcheck.checks.results import (
+    CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
+    ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT, ERROR_INVALID_BRANCH_NAME,
+)
 
 
 TYPE_BRANCH_NAME = 'branch_name'
