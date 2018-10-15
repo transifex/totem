@@ -9,7 +9,6 @@ ERROR_GENERIC = 'generic_error'
 ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
 
 
-
 class CheckResult:
     """Contains the results of a single Check that was performed."""
 

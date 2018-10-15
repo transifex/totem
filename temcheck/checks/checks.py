@@ -7,6 +7,8 @@ from temcheck.checks.results import (
 
 
 TYPE_BRANCH_NAME = 'branch_name'
+TYPE_PR_TITLE = 'pr_title'
+TYPE_PR_BODY = 'pr_body'
 
 
 class Check:
@@ -81,10 +83,9 @@ class BranchNameCheck(Check):
     """Checks whether or not a branch name follows a certain format."""
 
     def run(self, content):
-        """Check if a branch name has a certain prefix.
+        """Check if a branch name follows a certain format.
 
-        :param dict content: contains parameters with the actual content to check,
-            e.g. the commit message string for a checker that deals with commit messages
+        :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
         :rtype: CheckResult
         """
@@ -116,6 +117,44 @@ class BranchNameCheck(Check):
         return self._get_success()
 
 
+class PRTitleCheck(Check):
+    """Checks whether or not the title of a PR follows a certain format."""
+
+    def run(self, content):
+        """Check if a PR title follows a certain format.
+
+        :param dict content: contains parameters with the actual content to check
+        :return: the result of the check that was performed
+        :rtype: CheckResult
+        """
+        pattern = self._from_config('pattern')
+        title = content.get('title')
+
+        if not title:
+            return self._get_error(
+                ERROR_INVALID_CONTENT,
+                message='PR title not defined or empty',
+            )
+
+        if not pattern:
+            return self._get_error(
+                ERROR_INVALID_CONFIG,
+                message='PR title regex pattern not defined or empty',
+            )
+
+        success = re.match(pattern, title) is not None
+        if not success:
+            return self._get_failure(
+                ERROR_INVALID_BRANCH_NAME,
+                message='PR title "{}" doesn\'t match pattern: "{}"'.format(
+                    title,
+                    pattern,
+                )
+            )
+
+        return self._get_success()
+
+
 class CheckFactory:
     """Responsible for creating Check subclasses."""
 
@@ -131,3 +170,6 @@ class CheckFactory:
 
         if config_type == TYPE_BRANCH_NAME:
             return BranchNameCheck(config)
+
+        if config_type == TYPE_PR_TITLE:
+            return PRTitleCheck(config)
