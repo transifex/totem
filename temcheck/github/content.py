@@ -11,19 +11,15 @@ the Github functionality.
 
 from functools import lru_cache
 
-from checks.checks import Check, TYPE_BRANCH_NAME
+from temcheck.checks.checks import Check, TYPE_BRANCH_NAME
+from temcheck.checks.content import BaseContentProviderFactory, BaseContentProvider
+from temcheck.github import github_service
 
 
-class ContentProvider:
-    """The base class for all classes that want to provide content
-    to be checked against some rules.
+class GithubContentProvider(BaseContentProvider):
+    """A base class for all content providers that use Github.
 
-    Subclasses are meant to retrieve the content from whatever source
-    is necessary, so that the Check object that will be performing the
-    checks will have all necessary information.
-
-    For each Check subclass there should be a corresponding ContentProvider
-    subclass. e.g. for BranchNameCheck there should be a BranchNameContentProvider.
+    Provides some convenience functionality.
     """
 
     def __init__(self, **params):
@@ -32,24 +28,17 @@ class ContentProvider:
         The caller can specify any number of custom parameters that are necessary
         for retrieving the proper content.
         """
-        self.params = params
+        super().__init__(**params)
 
-    @lru_cache(maxsize=None)
-    def get_content(self):
-        """Return a dictionary with all required content for the given check
-        to perform its actions.
+    def get_pr(self):
+        """Return the pull request object.
 
-        The response is cached, so that this method can be called at
-        any point of the process. Subclasses need to include the @lru_cache
-        decorator.
-
-        :return: a dictionary with all retrieved content
-        :rtype: dict
+        :rtype: github.PullRequest.PullRequest
         """
-        raise NotImplemented()
+        return github_service().get_pr(self.repo_name, self.pr_number)
 
 
-class BranchNameContentProvider(ContentProvider):
+class BranchNameContentProvider(GithubContentProvider):
     """Retrieves the branch name of a pull request from Github."""
 
     @lru_cache(maxsize=None)
@@ -60,10 +49,10 @@ class BranchNameContentProvider(ContentProvider):
         }
 
     def _get_branch_name(self):
-        return ''  # TODO
+        return self.get_pr().head.ref
 
 
-class ContentProviderFactory:
+class ContentProviderFactory(BaseContentProviderFactory):
     """Responsible for creating the proper content provider for every type of check.
 
     This is part of a mechanism for lazy retrieval of content from services
@@ -80,8 +69,13 @@ class ContentProviderFactory:
 
         :param Check check: the check object to create a content provider for
         :return: a content provider
-        :rtype: ContentProvider
+        :rtype: BaseContentProvider
         """
+        params = {
+            'repo_name': self.repo_name,
+            'pr_num': self.pr_num,
+        }
+
         if check.check_type == TYPE_BRANCH_NAME:
-            return BranchNameContentProvider()
+            return BranchNameContentProvider(**params)
 

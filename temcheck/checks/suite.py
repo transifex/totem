@@ -1,7 +1,6 @@
-from checks.checks import CheckFactory
-from checks.config import CheckConfig, FAILURE_LEVEL_ERROR
-from checks.content import ContentProviderFactory
-from checks.results import CheckSuiteResults
+from temcheck.checks.checks import CheckFactory
+from temcheck.checks.config import CheckConfig, FAILURE_LEVEL_ERROR
+from temcheck.checks.results import CheckSuiteResults
 
 
 class CheckSuite:
@@ -14,9 +13,10 @@ class CheckSuite:
 
     In order to use it, you just need to create an instance with
     all necessary configuration and then call `run()`.
+    All checks run synchronously.
     """
 
-    def __init__(self, all_configs):
+    def __init__(self, all_configs, content_provider_factory):
         """Constructor.
 
         :param dict all_configs: a dictionary that contains the configuration for
@@ -35,7 +35,10 @@ class CheckSuite:
                 'failure_level': 'error',
               }
             }
+        :param BaseContentProviderFactory content_provider_factory: an object that
+            knows how to create content providers for a specific Git service
         """
+        self.content_provider_factory = content_provider_factory
         self.configs = {}
 
         # Convert the configuration dictionary into CheckConfig objects
@@ -49,7 +52,8 @@ class CheckSuite:
     def run(self):
         """Execute all checks that the suite contains and store the results.
 
-        This is the main point of the application where the magic happens.
+        Checks are executed synchronously, one by one.
+        This is the main point of the application where the actual magic happens.
         """
         # For every configuration object a proper content provider
         # is created and then given to a check object that knows
@@ -57,7 +61,7 @@ class CheckSuite:
         # along with a content provider and these are fed to
         for config in self.configs.values():
             check = CheckFactory.create(config)
-            content = ContentProviderFactory.create(check).get_content()
+            content = self.content_provider_factory.create(check).get_content()
             result = check.run(content)
             self.results.add(result)
 

@@ -1,5 +1,4 @@
-from checks.config import CheckConfig
-from checks.results import CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL
+from temcheck.checks.results import CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL
 
 
 ERROR_INVALID_CONTENT = 'invalid_content'
