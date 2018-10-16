@@ -7,6 +7,8 @@ ERROR_INVALID_CONFIG = 'invalid_config'
 ERROR_GENERIC = 'generic_error'
 
 ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
+ERROR_INVALID_PR_TITLE = 'invalid_pr_title'
+ERROR_UNFINISHED_CHECKLIST = 'unfinished_checklist'
 
 
 class CheckResult:

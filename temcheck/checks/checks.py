@@ -3,12 +3,13 @@ import re
 from temcheck.checks.results import (
     CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
     ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT, ERROR_INVALID_BRANCH_NAME,
+    ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST,
 )
 
 
 TYPE_BRANCH_NAME = 'branch_name'
 TYPE_PR_TITLE = 'pr_title'
-TYPE_PR_BODY = 'pr_body'
+TYPE_PR_BODY_CHECKLIST = 'pr_body_checklist'
 
 
 class Check:
@@ -145,11 +146,48 @@ class PRTitleCheck(Check):
         success = re.match(pattern, title) is not None
         if not success:
             return self._get_failure(
-                ERROR_INVALID_BRANCH_NAME,
+                ERROR_INVALID_PR_TITLE,
                 message='PR title "{}" doesn\'t match pattern: "{}"'.format(
                     title,
                     pattern,
                 )
+            )
+
+        return self._get_success()
+
+
+class PRBodyChecklistCheck(Check):
+    """Checks whether or not there are unchecked checklist items in the body
+    of a pull request.
+
+    Many TEM templates include a checklist that the reviewer has to complete
+    before the PR can be merged. Also, some developers use checklists as a TODO
+    before merging a PR.
+
+    This check makes sure that no item in a checklist is left uncheck, because
+    this would mean that something is not complete yet.
+    """
+
+    def run(self, content):
+        """Check if the body of a PR contains unchecked items.
+
+        :param dict content: contains parameters with the actual content to check
+        :return: the result of the check that was performed
+        :rtype: CheckResult
+        """
+        body = content.get('body')
+
+        if not body:
+            return self._get_error(
+                ERROR_INVALID_CONTENT,
+                message='PR body not defined or empty',
+            )
+
+        success = '- [ ]' not in body
+        if not success:
+            return self._get_failure(
+                ERROR_UNFINISHED_CHECKLIST,
+                message='Unfinished checklist items'
             )
 
         return self._get_success()
@@ -173,3 +211,6 @@ class CheckFactory:
 
         if config_type == TYPE_PR_TITLE:
             return PRTitleCheck(config)
+
+        if config_type == TYPE_PR_BODY_CHECKLIST:
+            return PRBodyChecklistCheck(config)
