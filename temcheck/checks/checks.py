@@ -312,7 +312,7 @@ class CommitMessagesCheck(Check):
                 errors = self._check_message(commit)
                 success = errors is None
                 if not success:
-                    errors['order'] = index + 1
+                    errors['commit_order'] = index + 1
                     failed_items.append(errors)
 
         except KeyError:
@@ -400,7 +400,7 @@ class CommitMessagesCheck(Check):
                 )
         if not body_length_ok:
             errors['body_length'] = \
-                'One more lines of the body are longer than {} characters'.format(
+                'One or more lines of the body are longer than {} characters'.format(
                     max_line_length,
                 )
 

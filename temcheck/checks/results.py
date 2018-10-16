@@ -1,3 +1,6 @@
+from temcheck.checks.config import FAILURE_LEVEL_ERROR, FAILURE_LEVEL_WARNING
+
+
 STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed
 STATUS_ERROR = 'error'  # The check could not be executed because of an error
@@ -36,6 +39,14 @@ class CheckResult:
         of an error."""
         return self.status == STATUS_PASS
 
+    @property
+    def failure_level(self):
+        """Defines how to handle a failed (or erroneous) result.
+
+        For example, if it should block merging or just show a warning message.
+        """
+        return self.config.failure_level
+
     def __str__(self):
         return 'CheckResult type={}, status={}, error_code={}, details={}'.format(
             self.config.check_type,
@@ -52,11 +63,43 @@ class CheckSuiteResults:
     """Contains the results of all the checks of a check suite that were executed."""
 
     def __init__(self):
-        self.results = {}
+        self._failed = []
+        self._successful = []
 
     def add(self, result):
         """Store the given result.
 
         :param CheckResult result: the result to store
         """
-        self.results[result.config.check_type] = result
+        if result.success:
+            self._successful.append(result)
+        else:
+            self._failed.append(result)
+
+    @property
+    def successful(self):
+        """A list of all CheckResult objects that passed the check."""
+        return self._successful
+
+    @property
+    def failed(self):
+        """A list of all CheckResult objects that failed the check."""
+        return self._failed
+
+    @property
+    def warnings(self):
+        """A list of all CheckResult objects that failed the check
+        and are considered to be non-required (warning level)."""
+        return [
+            result for result in self._failed
+            if result.failure_level == FAILURE_LEVEL_WARNING
+        ]
+
+    @property
+    def errors(self):
+        """A list of all CheckResult objects that failed the check
+        and are considered to be required (error level)."""
+        return [
+            result for result in self._failed
+            if result.failure_level == FAILURE_LEVEL_ERROR
+        ]
