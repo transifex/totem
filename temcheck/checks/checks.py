@@ -111,12 +111,14 @@ class BranchNameCheck(Check):
 
         success = re.search(pattern, branch_name) is not None
         if not success:
+            msg = 'Branch name "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
+                branch_name,
+                pattern,
+                self._from_config('pattern_descr', 'None')
+            )
             return self._get_failure(
                 ERROR_INVALID_BRANCH_NAME,
-                message='Branch name "{}" doesn\'t match pattern: "{}"'.format(
-                    branch_name,
-                    pattern,
-                )
+                message=msg
             )
 
         return self._get_success()
@@ -149,12 +151,14 @@ class PRTitleCheck(Check):
 
         success = re.search(pattern, title) is not None
         if not success:
+            msg = 'PR title "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
+                title,
+                pattern,
+                self._from_config('pattern_descr')
+            )
             return self._get_failure(
                 ERROR_INVALID_PR_TITLE,
-                message='PR title "{}" doesn\'t match pattern: "{}"'.format(
-                    title,
-                    pattern,
-                )
+                message=msg
             )
 
         return self._get_success()
@@ -390,8 +394,9 @@ class CommitMessagesCheck(Check):
                 )
         if not subject_pattern_ok:
             errors['subject_pattern'] = \
-                'Subject does not follow pattern: {}'.format(
+                'Subject does not follow pattern: {}. Explanation: {}'.format(
                     subject_pattern,
+                    subject_config.get('pattern_descr', 'None')
                 )
         if not body_length_ok:
             errors['body_length'] = \
