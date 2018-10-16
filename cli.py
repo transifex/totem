@@ -5,24 +5,7 @@ import sys
 from temcheck.checks.suite import CheckSuite
 from temcheck.github.content import ContentProviderFactory
 from temcheck.github.utils import parse_pr_url
-
-
-def print_result(result):
-    """Pretty-print the given result.
-
-    :param CheckResult result:
-    """
-    if result.success:
-        print('[{}] ... {}'.format(
-            result.config.check_type,
-            result.status.upper()
-        ))
-    else:
-        print('[{}] ... {}'.format(result.config.check_type, result.status.upper()))
-        print('Error code: {}'.format(result.error_code))
-        print('Details:')
-        print(json.dumps(result.details, sort_keys=True, indent=4))
-        print()
+from temcheck.reporting.reports import print_detailed_results, print_pre_run
 
 
 @click.command()
@@ -48,26 +31,10 @@ def main(pr_url, config_file):
         print('Error opening config file, "%s"' % e)
         sys.exit(1)
 
-    print('Will run {} checks'.format(len(config.keys())))
+    print_pre_run(config)
     suite = CheckSuite(config, factory)
     suite.run()
+    print_detailed_results(suite.results)
 
-    errors = suite.results.errors
-    print('\nErrors: {}\n-----------------'.format(len(errors)))
-    for result in errors:
-        print_result(result)
-
-    warnings = suite.results.warnings
-    print('\nWarnings: {}\n-----------------'.format(len(warnings)))
-    for result in warnings:
-        print_result(result)
-
-    successful = suite.results.successful
-    print('\nSuccessful checks: {}\n-----------------'.format(len(successful)))
-    for result in successful:
-        print_result(result)
-
-    print('\n')
-
-    if errors:
+    if suite.results.errors:
         sys.exit(1)
