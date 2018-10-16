@@ -3,13 +3,16 @@ import re
 from temcheck.checks.results import (
     CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
     ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT, ERROR_INVALID_BRANCH_NAME,
-    ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST,
+    ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST, ERROR_FORBIDDEN_PR_BODY_TEXT,
+    ERROR_MISSING_PR_BODY_TEXT,
 )
 
 
 TYPE_BRANCH_NAME = 'branch_name'
 TYPE_PR_TITLE = 'pr_title'
 TYPE_PR_BODY_CHECKLIST = 'pr_body_checklist'
+TYPE_PR_BODY_INCLUDES = 'pr_body_includes'
+TYPE_PR_BODY_EXCLUDES = 'pr_body_excludes'
 
 
 class Check:
@@ -105,7 +108,7 @@ class BranchNameCheck(Check):
                 message='Branch name regex pattern not defined or empty',
             )
 
-        success = re.match(pattern, branch_name) is not None
+        success = re.search(pattern, branch_name) is not None
         if not success:
             return self._get_failure(
                 ERROR_INVALID_BRANCH_NAME,
@@ -143,7 +146,7 @@ class PRTitleCheck(Check):
                 message='PR title regex pattern not defined or empty',
             )
 
-        success = re.match(pattern, title) is not None
+        success = re.search(pattern, title) is not None
         if not success:
             return self._get_failure(
                 ERROR_INVALID_PR_TITLE,
@@ -177,17 +180,87 @@ class PRBodyChecklistCheck(Check):
         """
         body = content.get('body')
 
-        if not body:
-            return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='PR body not defined or empty',
-            )
-
-        success = '- [ ]' not in body
-        if not success:
+        matches = re.findall('- \[ \]', body)
+        if matches:
             return self._get_failure(
                 ERROR_UNFINISHED_CHECKLIST,
-                message='Unfinished checklist items'
+                message='Found {} unfinished checklist items'.format(len(matches))
+            )
+
+        return self._get_success()
+
+
+class PRBodyIncludesCheck(Check):
+    """Makes sure that the PR body includes certain required strings.
+
+    This is useful in cases there are "forbidden" things, that shouldn't
+    be present inside a pull request body.
+
+    This check tests again multiple regex patterns. It always checks them all
+    and the result it returns includes all the ones that failed.
+    """
+
+    def run(self, content):
+        """Check if the body of a PR contains specific text.
+
+        :param dict content: contains parameters with the actual content to check
+        :return: the result of the check that was performed, successful if
+            all of the strings are included, failed otherwise
+        :rtype: CheckResult
+        """
+        body = content.get('body')
+
+        patterns = self._from_config('patterns', [])
+        failed_items = []
+        for pattern in patterns:
+            success = re.search(pattern, body, re.MULTILINE) is not None
+            if not success:
+                failed_items.append(pattern)
+
+        if failed_items:
+            return self._get_failure(
+                ERROR_MISSING_PR_BODY_TEXT,
+                message='Required strings in PR body are missing: {}'.format(
+                    ', '.join(['"{}"'.format(x) for x in failed_items])
+                ),
+            )
+
+        return self._get_success()
+
+
+class PRBodyExcludesCheck(Check):
+    """Makes sure that the PR body does not include certain strings.
+
+    This is useful in cases there are "forbidden" things, that shouldn't
+    be present inside a pull request body.
+
+    This check tests again multiple regex patterns. It always checks them all
+    and the result it returns includes all the ones that failed.
+    """
+
+    def run(self, content):
+        """Check if the body of a PR contains specific text.
+
+        :param dict content: contains parameters with the actual content to check
+        :return: the result of the check that was performed, successful if
+            none of the strings are included, failed otherwise
+        :rtype: CheckResult
+        """
+        body = content.get('body')
+
+        patterns = self._from_config('patterns', [])
+        failed_items = []
+        for pattern in patterns:
+            success = re.search(pattern, body, re.MULTILINE) is None
+            if not success:
+                failed_items.append(pattern)
+
+        if failed_items:
+            return self._get_failure(
+                ERROR_FORBIDDEN_PR_BODY_TEXT,
+                message='Forbidden strings found in PR body: {}'.format(
+                    ', '.join(['"{}"'.format(x) for x in failed_items])
+                ),
             )
 
         return self._get_success()
@@ -214,3 +287,9 @@ class CheckFactory:
 
         if config_type == TYPE_PR_BODY_CHECKLIST:
             return PRBodyChecklistCheck(config)
+
+        if config_type == TYPE_PR_BODY_INCLUDES:
+            return PRBodyIncludesCheck(config)
+
+        if config_type == TYPE_PR_BODY_EXCLUDES:
+            return PRBodyExcludesCheck(config)

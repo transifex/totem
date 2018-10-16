@@ -11,7 +11,10 @@ the Github functionality.
 
 from functools import lru_cache
 
-from temcheck.checks.checks import Check, TYPE_BRANCH_NAME, TYPE_PR_BODY_CHECKLIST, TYPE_PR_TITLE
+from temcheck.checks.checks import (
+    Check, TYPE_BRANCH_NAME, TYPE_PR_BODY_CHECKLIST, TYPE_PR_TITLE,
+    TYPE_PR_BODY_EXCLUDES, TYPE_PR_BODY_INCLUDES,
+)
 from temcheck.checks.content import BaseContentProviderFactory, BaseContentProvider
 from temcheck.github import github_service
 
@@ -91,6 +94,8 @@ class ContentProviderFactory(BaseContentProviderFactory):
             TYPE_BRANCH_NAME,
             TYPE_PR_BODY_CHECKLIST,
             TYPE_PR_TITLE,
+            TYPE_PR_BODY_EXCLUDES,
+            TYPE_PR_BODY_INCLUDES,
         )
         if check.check_type in pr_types:
             return PRContentProvider(**params)

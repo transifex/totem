@@ -9,6 +9,8 @@ ERROR_GENERIC = 'generic_error'
 ERROR_INVALID_BRANCH_NAME = 'invalid_branch_name'
 ERROR_INVALID_PR_TITLE = 'invalid_pr_title'
 ERROR_UNFINISHED_CHECKLIST = 'unfinished_checklist'
+ERROR_FORBIDDEN_PR_BODY_TEXT = 'forbidden_pr_body_text'
+ERROR_MISSING_PR_BODY_TEXT = 'missing_pr_body_text'
 
 
 class CheckResult:
@@ -34,7 +36,7 @@ class CheckResult:
         return self.status == STATUS_PASS
 
     def __str__(self):
-        return 'CheckResult type="{}", status="{}", error_code="{}", details={}'.format(
+        return 'CheckResult type={}, status={}, error_code={}, details={}'.format(
             self.config.check_type,
             self.status,
             self.error_code,
