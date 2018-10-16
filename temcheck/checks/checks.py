@@ -4,7 +4,7 @@ from temcheck.checks.results import (
     CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
     ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT, ERROR_INVALID_BRANCH_NAME,
     ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST, ERROR_FORBIDDEN_PR_BODY_TEXT,
-    ERROR_MISSING_PR_BODY_TEXT,
+    ERROR_MISSING_PR_BODY_TEXT, ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
 )
 
 
@@ -13,6 +13,7 @@ TYPE_PR_TITLE = 'pr_title'
 TYPE_PR_BODY_CHECKLIST = 'pr_body_checklist'
 TYPE_PR_BODY_INCLUDES = 'pr_body_includes'
 TYPE_PR_BODY_EXCLUDES = 'pr_body_excludes'
+TYPE_COMMIT_MESSAGE = 'commit_message'
 
 
 class Check:
@@ -266,6 +267,141 @@ class PRBodyExcludesCheck(Check):
         return self._get_success()
 
 
+class CommitMessagesCheck(Check):
+    """Makes sure that all commit messages of a PR are properly formatted."""
+
+    def run(self, content):
+        """Check if the commit messages of a PR are properly formatted.
+
+        The content of `commits` should have the following format:
+        'commits': [
+            {'message': <message>, 'sha': <sha>, 'url': <url>},
+            ...,
+            {'message': <message>, 'sha': <sha>, 'url': <url>},
+        ],
+
+        :param dict content: contains parameters with the actual content to check
+        :return: the result of the check that was performed
+        :rtype: CheckResult
+        """
+        commits = content.get('commits')
+
+        subject_config = self._from_config('subject')
+        if not subject_config:
+            return self._get_error(
+                ERROR_INVALID_CONFIG,
+                message='Configuration for commit checks should include a "subject" key',
+            )
+        body_config = self._from_config('body')
+        if not body_config:
+            return self._get_error(
+                ERROR_INVALID_CONFIG,
+                message='Configuration for commit checks should include '
+                        'a "body_config" key',
+            )
+
+        # Catch exceptions due to invalid format of the content
+        # In the future, we could alternatively validate the content via Schema
+        try:
+            failed_items = []
+            for index, commit in enumerate(commits):
+                errors = self._check_message(commit)
+                success = errors is None
+                if not success:
+                    errors['order'] = index + 1
+                    failed_items.append(errors)
+
+        except KeyError:
+            return self._get_error(
+                ERROR_INVALID_CONTENT,
+                message='Content for commit checks has invalid structure',
+            )
+
+        if failed_items:
+            return self._get_failure(
+                ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
+                message='Found {} commit message(s) that do not follow '
+                        'the correct format'.format(
+                            len(failed_items)
+                        ),
+                errors=failed_items,
+            )
+
+        return self._get_success()
+
+    def _check_message(self, commit):
+        """Check the given commit message against the rules defined in the config
+        and return the results.
+
+        :param dict commit: a dictionary containing information about a commit,
+            formatted as: {'message': <message>, 'sha': <sha>, 'url': <url>}
+        :return: a dictionary with all errors found or None if no error was found,
+            formatted as:
+            {
+              'subject_length': <msg>,
+              'subject_pattern': <msg>,
+              'body_length': <msg>,
+              'sha': <sha>,
+              'url': <url>,
+            }
+        :rtype: dict
+        """
+        message = commit['message']
+        lines = [line.strip() for line in message.splitlines()]
+
+        # Find the subject and the body of the commit message
+        # The subject is the part of the message until a newline is found
+        # or the string ends (if no newline exists)
+        # The body is the rest. If there is no newline in the message,
+        # then the body is considered to be empty
+        subject = message
+        body_lines = []
+        if '' in lines:
+            separator_index = lines.index('')
+            subject = '\n'.join(lines[0:separator_index])
+            body_lines = lines[separator_index:]
+
+        # Check subject
+        subject_config = self._from_config('subject')
+        max_length = subject_config.get('max_length', 0)
+        subject_pattern = subject_config.get('pattern')
+
+        subject_length_ok = len(subject) <= max_length if max_length else True
+        subject_pattern_ok = re.search(subject_pattern, subject) is not None \
+            if subject_pattern else True
+
+        # Check body
+        body_config = self._from_config('body')
+        max_line_length = body_config.get('max_line_length', 0)
+        body_length_ok = all([len(x) <= max_line_length for x in body_lines])
+
+        if all([subject_length_ok, subject_pattern_ok, body_length_ok]):
+            return None
+
+        errors = {
+            'sha': commit['sha'],
+            'url': commit['url'],
+        }
+        if not subject_length_ok:
+            errors['subject_length'] = \
+                'Subject has {} characters but the limit is {}'.format(
+                    len(subject),
+                    max_length,
+                )
+        if not subject_pattern_ok:
+            errors['subject_pattern'] = \
+                'Subject does not follow pattern: {}'.format(
+                    subject_pattern,
+                )
+        if not body_length_ok:
+            errors['body_length'] = \
+                'One more lines of the body are longer than {} characters'.format(
+                    max_line_length,
+                )
+
+        return errors
+
+
 class CheckFactory:
     """Responsible for creating Check subclasses."""
 
@@ -293,3 +429,6 @@ class CheckFactory:
 
         if config_type == TYPE_PR_BODY_EXCLUDES:
             return PRBodyExcludesCheck(config)
+
+        if config_type == TYPE_COMMIT_MESSAGE:
+            return CommitMessagesCheck(config)

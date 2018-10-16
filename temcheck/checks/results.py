@@ -11,6 +11,7 @@ ERROR_INVALID_PR_TITLE = 'invalid_pr_title'
 ERROR_UNFINISHED_CHECKLIST = 'unfinished_checklist'
 ERROR_FORBIDDEN_PR_BODY_TEXT = 'forbidden_pr_body_text'
 ERROR_MISSING_PR_BODY_TEXT = 'missing_pr_body_text'
+ERROR_INVALID_COMMIT_MESSAGE_FORMAT = 'invalid_commit_message_format'
 
 
 class CheckResult:

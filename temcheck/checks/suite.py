@@ -57,22 +57,50 @@ class CheckSuite:
         Checks are executed synchronously, one by one.
         This is the main point of the application where the actual magic happens.
         """
+        for config in self.configs.values():
+            result = self._run_check(config)
+            self.results.add(result)
+
+    def _run_check(self, config):
+        """Execute a check for the given configuration.
+
+        :param CheckConfig config: the configuration of the check
+        :return: the result of the check
+        :rtype: CheckResult
+        """
         # For every configuration object a proper content provider
         # is created and then given to a check object that knows
-        # what to test. Each result is added to the suite.
-        # along with a content provider and these are fed to
-        for config in self.configs.values():
-            check = CheckFactory.create(config)
+        # what to test
+        check = CheckFactory.create(config)
+        if not check:
+            msg = ('Check with type "{}" could not be created. '
+                   'Make sure that CheckFactory knows how to create it').format(
+                    config.check_type
+                )
+            return CheckResult(
+                config, STATUS_ERROR, ERROR_GENERIC,
+                message=msg,
+            )
 
-            try:
-                content = self.content_provider_factory.create(check).get_content()
-                result = check.run(content)
-            except Exception as e:
-                result = CheckResult(
-                    config, STATUS_ERROR, ERROR_GENERIC, message=str(e)
+        try:
+            content_provider = self.content_provider_factory.create(check)
+            if not content_provider:
+                msg = ('Content provider could not be created for check "{}". '
+                       'Make sure that {} knows how to create it').format(
+                        check.check_type,
+                        type(self.content_provider_factory).__name__,
                 )
 
-            self.results.add(result)
+                return CheckResult(
+                    config, STATUS_ERROR, ERROR_GENERIC,
+                    message=msg,
+                )
+            content = content_provider.get_content()
+            return check.run(content)
+        except Exception as e:
+            return CheckResult(
+                config, STATUS_ERROR, ERROR_GENERIC, message=str(e)
+            )
 
     def _create_config(self, check_type, config_dict):
         """Create a CheckConfig object with the given type and parameters.

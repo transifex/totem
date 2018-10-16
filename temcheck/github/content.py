@@ -13,7 +13,7 @@ from functools import lru_cache
 
 from temcheck.checks.checks import (
     Check, TYPE_BRANCH_NAME, TYPE_PR_BODY_CHECKLIST, TYPE_PR_TITLE,
-    TYPE_PR_BODY_EXCLUDES, TYPE_PR_BODY_INCLUDES,
+    TYPE_PR_BODY_EXCLUDES, TYPE_PR_BODY_INCLUDES, TYPE_COMMIT_MESSAGE,
 )
 from temcheck.checks.content import BaseContentProviderFactory, BaseContentProvider
 from temcheck.github import github_service
@@ -57,12 +57,43 @@ class PRContentProvider(GithubContentProvider):
 
     @lru_cache(maxsize=None)
     def get_content(self):
-        """Return a dictionary that contains the current branch name."""
+        """Return a dictionary that contains various information about the PR."""
         pr = self.get_pr()
         return {
             'branch': pr.head.ref,
             'title': pr.title,
             'body': pr.body,
+        }
+
+
+class PRCommitsContentProvider(GithubContentProvider):
+    """Retrieves information of all commits of a pull request from Github.
+
+    Contains all information that is necessary to perform related on commit
+    checks. Makes one request to the Github API for retrieving the PR info
+    (if not already cached) and another request for retrieving the commit info.
+
+    If a check object needs more information that is available without doing
+    any extra request, the information should be added here in new keys
+    in the returned dictionary. If extra requests are necessary, a new content
+    provider subclass must be created, to avoid making redundant requests
+    for all PR-based content providers.
+    """
+
+    @lru_cache(maxsize=None)
+    def get_content(self):
+        """Return a dictionary that contains various information about the commits."""
+        commits = self.get_pr().get_commits()
+
+        return {
+            'commits': [
+                {
+                    'message': commit.commit.message,
+                    'sha': commit.sha,
+                    'url': commit.html_url
+                }
+                for commit in commits
+            ],
         }
 
 
@@ -99,3 +130,6 @@ class ContentProviderFactory(BaseContentProviderFactory):
         )
         if check.check_type in pr_types:
             return PRContentProvider(**params)
+
+        if check.check_type == TYPE_COMMIT_MESSAGE:
+            return PRCommitsContentProvider(**params)
