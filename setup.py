@@ -14,5 +14,4 @@ setup(author='Transifex Devs',
       entry_points='''
          [console_scripts]
          temcheck=cli:main
-      '''
-)
+      ''')
