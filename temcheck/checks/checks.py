@@ -185,7 +185,7 @@ class PRBodyChecklistCheck(Check):
         """
         body = content.get('body')
 
-        matches = re.findall('- \[ \]', body)
+        matches = re.findall('[-*] \[ \]', body)
         if matches:
             return self._get_failure(
                 ERROR_UNFINISHED_CHECKLIST,
