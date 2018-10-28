@@ -52,11 +52,29 @@ class Check:
         return self._config.check_type
 
     def _from_config(self, name, default=None):
-        """Return a parameter from the configuration options dictionary."""
+        """Return a parameter from the configuration options dictionary.
+
+        If the options dictionary does not contain an entry with this name,
+        it returns the `default` value provided in the call,
+        otherwise the return value of _default_config().
+        If no value is provider there either, it returns `None`.
+        """
+        default = default if default is not None else self._default_config(name)
         return self._config.options.get(name, default)
 
+    def _default_config(self, name):
+        """Return the default value that corresponds to the given option name.
+
+        By default, this value is always `None`. Subclasses can override this
+        functionality and provide custom values depending on the option name.
+        """
+        return None
+
     def _get_success(self, **details):
-        """Return a successful result."""
+        """Return a successful result.
+
+        This means that the check was executed and passed.
+        """
         return CheckResult(
             self._config,
             STATUS_PASS,
@@ -64,7 +82,9 @@ class Check:
         )
 
     def _get_failure(self, error_code, message, **details):
-        """Return a failed result."""
+        """Return a failed result.
+
+        This means that the check was executed and failed."""
         return CheckResult(
             self._config,
             STATUS_FAIL,
@@ -74,7 +94,10 @@ class Check:
         )
 
     def _get_error(self, error_code, message, **details):
-        """Return an erroneous result."""
+        """Return an erroneous result.
+
+        This means that the check could not execute due to an error.
+        """
         return CheckResult(
             self._config,
             STATUS_ERROR,
@@ -111,17 +134,25 @@ class BranchNameCheck(Check):
 
         success = re.search(pattern, branch_name) is not None
         if not success:
-            msg = 'Branch name "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
-                branch_name,
-                pattern,
-                self._from_config('pattern_descr', 'None')
+            msg = 'Branch name "{}" doesn\'t match pattern: "{}". ' \
+                  'Explanation: {}'.format(
+                    branch_name,
+                    pattern,
+                    self._from_config('pattern_descr')
             )
             return self._get_failure(
                 ERROR_INVALID_BRANCH_NAME,
-                message=msg
+                message=msg,
             )
 
         return self._get_success()
+
+    def _default_config(self, name):
+        if name == 'pattern':
+            return '^[\w\d]\-]+$'
+        elif name == 'pattern_descr':
+            return 'Branch name must only include lowercase characters, numbers ' \
+                   'and dashes'
 
 
 class PRTitleCheck(Check):
@@ -163,6 +194,12 @@ class PRTitleCheck(Check):
 
         return self._get_success()
 
+    def _default_config(self, name):
+        if name == 'pattern':
+            return '^[A-Z].+$'
+        elif name == 'pattern_descr':
+            return 'PR title must start with an uppercase character'
+
 
 class PRBodyChecklistCheck(Check):
     """Checks whether or not there are unchecked checklist items in the body
@@ -174,6 +211,8 @@ class PRBodyChecklistCheck(Check):
 
     This check makes sure that no item in a checklist is left uncheck, because
     this would mean that something is not complete yet.
+
+    It uses markdown syntax.
     """
 
     def run(self, content):
@@ -198,7 +237,7 @@ class PRBodyChecklistCheck(Check):
 class PRBodyIncludesCheck(Check):
     """Makes sure that the PR body includes certain required strings.
 
-    This is useful in cases there are "forbidden" things, that shouldn't
+    This is useful in cases there are things that should always
     be present inside a pull request body.
 
     This check tests again multiple regex patterns. It always checks them all
@@ -294,7 +333,8 @@ class CommitMessagesCheck(Check):
         if not subject_config:
             return self._get_error(
                 ERROR_INVALID_CONFIG,
-                message='Configuration for commit checks should include a "subject" key',
+                message='Configuration for commit checks should include '
+                        'a "subject" key',
             )
         body_config = self._from_config('body')
         if not body_config:
@@ -405,6 +445,19 @@ class CommitMessagesCheck(Check):
                 )
 
         return errors
+
+    def _default_config(self, name):
+        if name == 'subject':
+            return {
+                'max_length': 50,
+                'pattern': '^[A-Z].+(?<!\.)$',
+                'pattern_descr': 'Commit message subject must start with '
+                                 'a capital letter and not finish with a dot',
+            }
+        elif name == 'body':
+            return {
+                'max_line_length': 72,
+            }
 
 
 class CheckFactory:
