@@ -461,10 +461,43 @@ class CommitMessagesCheck(Check):
 
 
 class CheckFactory:
-    """Responsible for creating Check subclasses."""
+    """Responsible for creating Check subclasses.
 
-    @staticmethod
-    def create(config):
+    Allows clients to add custom functionality, by providing a custom
+    Check subclass, tied to a custom configuration type.
+    """
+
+    def __init__(self):
+        self._checks = {}
+        self._register_defaults()
+
+    def register(self, config_type, check_class):
+        """Register the given check class for the given configuration type.
+
+        Allows clients to add custom functionality, by providing a custom
+        Check subclass, tied to a custom configuration type.
+
+        :param str config_type: an identifier that will be associated with
+            the given check
+        :param type check_class: the class that will be used to create
+            an instance from; needs to be a Check subclass
+        """
+        self._checks[config_type] = check_class
+
+    def _register_defaults(self):
+        """Register all default checks."""
+        defaults = {
+            TYPE_BRANCH_NAME: BranchNameCheck,
+            TYPE_PR_TITLE: PRTitleCheck,
+            TYPE_PR_BODY_CHECKLIST: PRBodyChecklistCheck,
+            TYPE_PR_BODY_INCLUDES: PRBodyIncludesCheck,
+            TYPE_PR_BODY_EXCLUDES: PRBodyExcludesCheck,
+            TYPE_COMMIT_MESSAGE: CommitMessagesCheck,
+        }
+        for config_type, check_class in defaults.items():
+            self.register(config_type, check_class)
+
+    def create(self, config):
         """Create the proper Check subclass based on the given configuration.
 
         :param CheckConfig config: the configuration object to use
@@ -473,20 +506,8 @@ class CheckFactory:
         """
         config_type = config.check_type
 
-        if config_type == TYPE_BRANCH_NAME:
-            return BranchNameCheck(config)
+        cls = self._checks.get(config_type, None)
+        if cls is None:
+            return None
 
-        if config_type == TYPE_PR_TITLE:
-            return PRTitleCheck(config)
-
-        if config_type == TYPE_PR_BODY_CHECKLIST:
-            return PRBodyChecklistCheck(config)
-
-        if config_type == TYPE_PR_BODY_INCLUDES:
-            return PRBodyIncludesCheck(config)
-
-        if config_type == TYPE_PR_BODY_EXCLUDES:
-            return PRBodyExcludesCheck(config)
-
-        if config_type == TYPE_COMMIT_MESSAGE:
-            return CommitMessagesCheck(config)
+        return cls(config)

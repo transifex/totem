@@ -106,7 +106,41 @@ class ContentProviderFactory(BaseContentProviderFactory):
     that gets hold of a provider object can command it to retrieve the content,
     which is an operation that might take time, since it often requires HTTP requests
     to the remote service.
+
+    Allows clients to add custom functionality by registering new providers,
+    associated with certain configuration types.
     """
+
+    def __init__(self, repo_name, pr_num):
+        super().__init__(repo_name, pr_num)
+        self._providers = {}
+        self._register_defaults()
+
+    def register(self, check_type, provider_class):
+        """Register the given provider class for the given id.
+
+        Allows clients to add custom functionality, by providing a custom
+        GithubContentProvider subclass, tied to a custom string id.
+
+        :param str check_type: the type of the check to associate this
+            provider class with
+        :param type provider_class: the class that will be used to create
+            an instance from; needs to be a GithubContentProvider subclass
+        """
+        self._providers[check_type] = provider_class
+
+    def _register_defaults(self):
+        """Register all default checks."""
+        defaults = {
+            TYPE_BRANCH_NAME: PRContentProvider,
+            TYPE_PR_BODY_CHECKLIST: PRContentProvider,
+            TYPE_PR_TITLE: PRContentProvider,
+            TYPE_PR_BODY_EXCLUDES: PRContentProvider,
+            TYPE_PR_BODY_INCLUDES: PRContentProvider,
+            TYPE_COMMIT_MESSAGE: PRCommitsContentProvider,
+        }
+        for provider_id, provider_class in defaults.items():
+            self.register(provider_id, provider_class)
 
     def create(self, check):
         """Return a content provider that can later provide all required content
@@ -121,15 +155,8 @@ class ContentProviderFactory(BaseContentProviderFactory):
             'pr_num': self.pr_num,
         }
 
-        pr_types = (
-            TYPE_BRANCH_NAME,
-            TYPE_PR_BODY_CHECKLIST,
-            TYPE_PR_TITLE,
-            TYPE_PR_BODY_EXCLUDES,
-            TYPE_PR_BODY_INCLUDES,
-        )
-        if check.check_type in pr_types:
-            return PRContentProvider(**params)
+        cls = self._providers.get(check.check_type, None)
+        if cls is None:
+            return None
 
-        if check.check_type == TYPE_COMMIT_MESSAGE:
-            return PRCommitsContentProvider(**params)
+        return cls(**params)
