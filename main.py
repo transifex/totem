@@ -7,17 +7,25 @@ If more Git services need to be supported in the future, this needs
 to be refactored.
 """
 
-from temcheck.checks.checks import CheckFactory
+from temcheck.checks.checks import (
+    TYPE_BRANCH_NAME,
+    TYPE_COMMIT_MESSAGE,
+    TYPE_PR_BODY_CHECKLIST,
+    TYPE_PR_BODY_EXCLUDES,
+    TYPE_PR_BODY_INCLUDES,
+    TYPE_PR_TITLE,
+    BranchNameCheck,
+    CheckFactory,
+    CommitMessagesCheck,
+    PRBodyChecklistCheck,
+    PRBodyExcludesCheck,
+    PRBodyIncludesCheck,
+    PRTitleCheck,
+)
 from temcheck.checks.suite import CheckSuite
 from temcheck.github.content import ContentProviderFactory
 from temcheck.github.utils import parse_pr_url
 from temcheck.reporting.reports import print_detailed_results, print_pre_run
-from temcheck.checks.checks import (
-    BranchNameCheck, CommitMessagesCheck, PRTitleCheck, PRBodyExcludesCheck,
-    PRBodyIncludesCheck, PRBodyChecklistCheck,
-    TYPE_BRANCH_NAME, TYPE_COMMIT_MESSAGE, TYPE_PR_BODY_INCLUDES,
-    TYPE_PR_BODY_EXCLUDES, TYPE_PR_TITLE, TYPE_PR_BODY_CHECKLIST,
-)
 
 
 class TemCheck:

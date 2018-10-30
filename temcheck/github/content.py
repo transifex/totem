@@ -12,10 +12,14 @@ the Github functionality.
 from functools import lru_cache
 
 from temcheck.checks.checks import (
-    Check, TYPE_BRANCH_NAME, TYPE_PR_BODY_CHECKLIST, TYPE_PR_TITLE,
-    TYPE_PR_BODY_EXCLUDES, TYPE_PR_BODY_INCLUDES, TYPE_COMMIT_MESSAGE,
+    TYPE_BRANCH_NAME,
+    TYPE_COMMIT_MESSAGE,
+    TYPE_PR_BODY_CHECKLIST,
+    TYPE_PR_BODY_EXCLUDES,
+    TYPE_PR_BODY_INCLUDES,
+    TYPE_PR_TITLE,
 )
-from temcheck.checks.content import BaseContentProviderFactory, BaseContentProvider
+from temcheck.checks.content import BaseContentProvider, BaseContentProviderFactory
 from temcheck.github import github_service
 
 
@@ -59,11 +63,7 @@ class PRContentProvider(GithubContentProvider):
     def get_content(self):
         """Return a dictionary that contains various information about the PR."""
         pr = self.get_pr()
-        return {
-            'branch': pr.head.ref,
-            'title': pr.title,
-            'body': pr.body,
-        }
+        return {'branch': pr.head.ref, 'title': pr.title, 'body': pr.body}
 
 
 class PRCommitsContentProvider(GithubContentProvider):
@@ -90,10 +90,10 @@ class PRCommitsContentProvider(GithubContentProvider):
                 {
                     'message': commit.commit.message,
                     'sha': commit.sha,
-                    'url': commit.html_url
+                    'url': commit.html_url,
                 }
                 for commit in commits
-            ],
+            ]
         }
 
 
@@ -150,10 +150,7 @@ class ContentProviderFactory(BaseContentProviderFactory):
         :return: a content provider
         :rtype: BaseContentProvider
         """
-        params = {
-            'repo_name': self.repo_name,
-            'pr_num': self.pr_num,
-        }
+        params = {'repo_name': self.repo_name, 'pr_num': self.pr_num}
 
         cls = self._providers.get(check.check_type, None)
         if cls is None:

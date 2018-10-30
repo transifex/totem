@@ -1,7 +1,9 @@
-from temcheck.checks.checks import CheckFactory
-from temcheck.checks.config import CheckConfig, FAILURE_LEVEL_ERROR
+from temcheck.checks.config import FAILURE_LEVEL_ERROR, CheckConfig
 from temcheck.checks.results import (
-    CheckResult, CheckSuiteResults, STATUS_ERROR, ERROR_GENERIC
+    ERROR_GENERIC,
+    STATUS_ERROR,
+    CheckResult,
+    CheckSuiteResults,
 )
 
 
@@ -77,36 +79,28 @@ class CheckSuite:
         # what to test
         check = factory.create(config)
         if not check:
-            msg = ('Check with type "{}" could not be created. '
-                   'Make sure that CheckFactory knows how to create it').format(
-                    config.check_type
-                )
-            return CheckResult(
-                config, STATUS_ERROR, ERROR_GENERIC,
-                message=msg,
-            )
+            msg = (
+                'Check with type "{}" could not be created. '
+                'Make sure that CheckFactory knows how to create it'
+            ).format(config.check_type)
+            return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)
 
         try:
             content_provider = self._content_provider_factory.create(check)
             if not content_provider:
                 factory_type = type(self._content_provider_factory)
-                msg = ('Content provider could not be created for check "{}". '
-                       'Make sure that {}.{} knows how to create it').format(
-                        check.check_type,
-                        factory_type.__module__,
-                        factory_type.__name__,
+                msg = (
+                    'Content provider could not be created for check "{}". '
+                    'Make sure that {}.{} knows how to create it'
+                ).format(
+                    check.check_type, factory_type.__module__, factory_type.__name__
                 )
 
-                return CheckResult(
-                    config, STATUS_ERROR, ERROR_GENERIC,
-                    message=msg,
-                )
+                return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)
             content = content_provider.get_content()
             return check.run(content)
         except Exception as e:
-            return CheckResult(
-                config, STATUS_ERROR, ERROR_GENERIC, message=str(e),
-            )
+            return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=str(e))
 
     def _create_config(self, check_type, config_dict):
         """Create a CheckConfig object with the given type and parameters.

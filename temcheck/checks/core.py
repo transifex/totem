@@ -1,6 +1,4 @@
-from temcheck.checks.results import (
-    CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
-)
+from temcheck.checks.results import STATUS_ERROR, STATUS_FAIL, STATUS_PASS, CheckResult
 
 
 class Check:
@@ -62,22 +60,14 @@ class Check:
 
         This means that the check was executed and passed.
         """
-        return CheckResult(
-            self._config,
-            STATUS_PASS,
-            **details,
-        )
+        return CheckResult(self._config, STATUS_PASS, **details)
 
     def _get_failure(self, error_code, message, **details):
         """Return a failed result.
 
         This means that the check was executed and failed."""
         return CheckResult(
-            self._config,
-            STATUS_FAIL,
-            error_code=error_code,
-            message=message,
-            **details,
+            self._config, STATUS_FAIL, error_code=error_code, message=message, **details
         )
 
     def _get_error(self, error_code, message, **details):

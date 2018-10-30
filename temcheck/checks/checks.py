@@ -1,11 +1,15 @@
 import re
 
-from temcheck.checks.core import Check, CheckFactory
+from temcheck.checks.core import Check
 from temcheck.checks.results import (
-    CheckResult,  ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT,
-    ERROR_INVALID_BRANCH_NAME, ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST,
-    ERROR_FORBIDDEN_PR_BODY_TEXT, ERROR_MISSING_PR_BODY_TEXT,
+    ERROR_FORBIDDEN_PR_BODY_TEXT,
+    ERROR_INVALID_BRANCH_NAME,
     ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
+    ERROR_INVALID_CONFIG,
+    ERROR_INVALID_CONTENT,
+    ERROR_INVALID_PR_TITLE,
+    ERROR_MISSING_PR_BODY_TEXT,
+    ERROR_UNFINISHED_CHECKLIST,
 )
 
 TYPE_BRANCH_NAME = 'branch_name'
@@ -31,8 +35,7 @@ class BranchNameCheck(Check):
 
         if not branch_name:
             return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='Branch name not defined or empty',
+                ERROR_INVALID_CONTENT, message='Branch name not defined or empty'
             )
 
         if not pattern:
@@ -43,16 +46,13 @@ class BranchNameCheck(Check):
 
         success = re.search(pattern, branch_name) is not None
         if not success:
-            msg = 'Branch name "{}" doesn\'t match pattern: "{}". ' \
-                  'Explanation: {}'.format(
-                    branch_name,
-                    pattern,
-                    self._from_config('pattern_descr')
+            msg = (
+                'Branch name "{}" doesn\'t match pattern: "{}". '
+                'Explanation: {}'.format(
+                    branch_name, pattern, self._from_config('pattern_descr')
+                )
             )
-            return self._get_failure(
-                ERROR_INVALID_BRANCH_NAME,
-                message=msg,
-            )
+            return self._get_failure(ERROR_INVALID_BRANCH_NAME, message=msg)
 
         return self._get_success()
 
@@ -60,8 +60,9 @@ class BranchNameCheck(Check):
         if name == 'pattern':
             return '^[\w\d]\-]+$'
         elif name == 'pattern_descr':
-            return 'Branch name must only include lowercase characters, numbers ' \
-                   'and dashes'
+            return (
+                'Branch name must only include lowercase characters, numbers and dashes'
+            )
 
 
 class PRTitleCheck(Check):
@@ -79,8 +80,7 @@ class PRTitleCheck(Check):
 
         if not title:
             return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='PR title not defined or empty',
+                ERROR_INVALID_CONTENT, message='PR title not defined or empty'
             )
 
         if not pattern:
@@ -92,14 +92,9 @@ class PRTitleCheck(Check):
         success = re.search(pattern, title) is not None
         if not success:
             msg = 'PR title "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
-                title,
-                pattern,
-                self._from_config('pattern_descr')
+                title, pattern, self._from_config('pattern_descr')
             )
-            return self._get_failure(
-                ERROR_INVALID_PR_TITLE,
-                message=msg
-            )
+            return self._get_failure(ERROR_INVALID_PR_TITLE, message=msg)
 
         return self._get_success()
 
@@ -137,7 +132,7 @@ class PRBodyChecklistCheck(Check):
         if matches:
             return self._get_failure(
                 ERROR_UNFINISHED_CHECKLIST,
-                message='Found {} unfinished checklist items'.format(len(matches))
+                message='Found {} unfinished checklist items'.format(len(matches)),
             )
 
         return self._get_success()
@@ -243,14 +238,14 @@ class CommitMessagesCheck(Check):
             return self._get_error(
                 ERROR_INVALID_CONFIG,
                 message='Configuration for commit checks should include '
-                        'a "subject" key',
+                'a "subject" key',
             )
         body_config = self._from_config('body')
         if not body_config:
             return self._get_error(
                 ERROR_INVALID_CONFIG,
                 message='Configuration for commit checks should include '
-                        'a "body_config" key',
+                'a "body_config" key',
             )
 
         # Catch exceptions due to invalid format of the content
@@ -274,9 +269,7 @@ class CommitMessagesCheck(Check):
             return self._get_failure(
                 ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
                 message='Found {} commit message(s) that do not follow '
-                        'the correct format'.format(
-                            len(failed_items)
-                        ),
+                'the correct format'.format(len(failed_items)),
                 errors=failed_items,
             )
 
@@ -320,8 +313,9 @@ class CommitMessagesCheck(Check):
         subject_pattern = subject_config.get('pattern')
 
         subject_length_ok = len(subject) <= max_length if max_length else True
-        subject_pattern_ok = re.search(subject_pattern, subject) is not None \
-            if subject_pattern else True
+        subject_pattern_ok = (
+            re.search(subject_pattern, subject) is not None if subject_pattern else True
+        )
 
         # Check body
         body_config = self._from_config('body')
@@ -331,27 +325,25 @@ class CommitMessagesCheck(Check):
         if all([subject_length_ok, subject_pattern_ok, body_length_ok]):
             return None
 
-        errors = {
-            'sha': commit['sha'],
-            'url': commit['url'],
-        }
+        errors = {'sha': commit['sha'], 'url': commit['url']}
         if not subject_length_ok:
-            errors['subject_length'] = \
-                'Subject has {} characters but the limit is {}'.format(
-                    len(subject),
-                    max_length,
-                )
+            errors[
+                'subject_length'
+            ] = 'Subject has {} characters but the limit is {}'.format(
+                len(subject), max_length
+            )
         if not subject_pattern_ok:
-            errors['subject_pattern'] = \
-                'Subject does not follow pattern: {}. Explanation: {}'.format(
-                    subject_pattern,
-                    subject_config.get('pattern_descr', 'None')
-                )
+            errors[
+                'subject_pattern'
+            ] = 'Subject does not follow pattern: {}. Explanation: {}'.format(
+                subject_pattern, subject_config.get('pattern_descr', 'None')
+            )
         if not body_length_ok:
-            errors['body_length'] = \
-                'One or more lines of the body are longer than {} characters'.format(
-                    max_line_length,
-                )
+            errors[
+                'body_length'
+            ] = 'One or more lines of the body are longer than {} characters'.format(
+                max_line_length
+            )
 
         return errors
 
@@ -361,9 +353,7 @@ class CommitMessagesCheck(Check):
                 'max_length': 50,
                 'pattern': '^[A-Z].+(?<!\.)$',
                 'pattern_descr': 'Commit message subject must start with '
-                                 'a capital letter and not finish with a dot',
+                'a capital letter and not finish with a dot',
             }
         elif name == 'body':
-            return {
-                'max_line_length': 72,
-            }
+            return {'max_line_length': 72}

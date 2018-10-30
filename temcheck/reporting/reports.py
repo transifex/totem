@@ -1,6 +1,5 @@
 import pyaml
-
-from temcheck.checks.results import CheckSuiteResults, STATUS_FAIL
+from temcheck.checks.results import STATUS_FAIL
 
 
 class Color:
@@ -15,13 +14,15 @@ class Color:
     @staticmethod
     def print(string):
         """Print to the console with color support."""
-        string = string.replace('[check]', Color.CHECK_ITEM)\
-            .replace('[h]', Color.HEADER)\
-            .replace('[end]', Color.END)\
-            .replace('[pass]', Color.PASS)\
-            .replace('[error]', Color.ERROR)\
-            .replace('[fail]', Color.FAIL)\
+        string = (
+            string.replace('[check]', Color.CHECK_ITEM)
+            .replace('[h]', Color.HEADER)
+            .replace('[end]', Color.END)
+            .replace('[pass]', Color.PASS)
+            .replace('[error]', Color.ERROR)
+            .replace('[fail]', Color.FAIL)
             .replace('[warning]', Color.WARNING)
+        )
         print(string)
 
 
@@ -31,21 +32,24 @@ def _print_result(result):
     :param CheckResult result:
     """
     if result.success:
-        Color.print('[check][{}][end] ... [pass]{}[end]'.format(
-            result.config.check_type,
-            result.status.upper(),
-        ))
+        Color.print(
+            '[check][{}][end] ... [pass]{}[end]'.format(
+                result.config.check_type, result.status.upper()
+            )
+        )
     else:
         if result.status == STATUS_FAIL:
-            Color.print('[check][{}][end] ... [fail]{}[end]'.format(
-                result.config.check_type,
-                result.status.upper()
-            ))
+            Color.print(
+                '[check][{}][end] ... [fail]{}[end]'.format(
+                    result.config.check_type, result.status.upper()
+                )
+            )
         else:
-            Color.print('[check][{}][end] ... [error]{}[end]'.format(
-                result.config.check_type,
-                result.status.upper()
-            ))
+            Color.print(
+                '[check][{}][end] ... [error]{}[end]'.format(
+                    result.config.check_type, result.status.upper()
+                )
+            )
         Color.print('[h]Error code[end]: {}'.format(result.error_code))
         Color.print('[h]Details[end]:')
         pyaml.p(result.details)
@@ -104,9 +108,7 @@ def print_detailed_results(results):
 
     Color.print(
         '[warning]Warnings({})[end] - '
-        'Fixing these is optional and may not be applicable'.format(
-            len(warnings)
-        )
+        'Fixing these is optional and may not be applicable'.format(len(warnings))
     )
     for result in warnings:
         Color.print('- [check][{}][end]'.format(result.config.check_type))
@@ -118,4 +120,3 @@ def print_detailed_results(results):
     print()
 
     print('\n')
-

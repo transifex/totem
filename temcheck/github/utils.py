@@ -1,4 +1,3 @@
-
 def parse_pr_url(url):
     """Parse the given pull request URL and return its information.
 
@@ -12,4 +11,3 @@ def parse_pr_url(url):
     pr_num = int(arr[-1])
 
     return full_repo_name, pr_num
-

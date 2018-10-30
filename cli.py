@@ -1,9 +1,9 @@
 """Command Line Interface functionality. """
 
-import click
 import json
 import sys
 
+import click
 from main import TemCheck
 
 
