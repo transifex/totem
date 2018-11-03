@@ -15,17 +15,17 @@ from temcheck.checks.checks import (
     TYPE_PR_BODY_INCLUDES,
     TYPE_PR_TITLE,
     BranchNameCheck,
-    CheckFactory,
     CommitMessagesCheck,
     PRBodyChecklistCheck,
     PRBodyExcludesCheck,
     PRBodyIncludesCheck,
     PRTitleCheck,
 )
+from temcheck.checks.core import CheckFactory
 from temcheck.checks.suite import CheckSuite
-from temcheck.github.content import ContentProviderFactory
+from temcheck.github.content import ContentProviderFactory, GithubContentProvider
 from temcheck.github.utils import parse_pr_url
-from temcheck.reporting.reports import print_detailed_results, print_pre_run
+from temcheck.reporting.reports import ConsoleReport, PRCommentReport
 
 
 class TemCheck:
@@ -48,9 +48,10 @@ class TemCheck:
         """
         self._config_dict = config_dict
 
-        full_repo_name, pr_number = parse_pr_url(pr_url)
+        self.pr_url = pr_url
+        self.full_repo_name, self.pr_number = parse_pr_url(pr_url)
         self._content_provider_factory = ContentProviderFactory(
-            full_repo_name, pr_number
+            self.full_repo_name, self.pr_number
         )
         self._check_factory = CheckFactory()
         self._register_defaults()
@@ -82,13 +83,28 @@ class TemCheck:
         :return: the results of the execution of the tests
         :rtype: CheckSuiteResults
         """
-        print_pre_run(self._config_dict)
+        print(ConsoleReport.get_pre_run_report(self._config_dict, self.pr_url))
         suite = CheckSuite(
             all_configs=self._config_dict,
-            content_provider_factory=self._content_provider_factory,
+            content_provider_factory=self.content_provider_factory,
             check_factory=self._check_factory,
         )
         suite.run()
-        print_detailed_results(suite.results)
+        print(ConsoleReport.get_detailed_results(suite.results))
+        print(ConsoleReport.get_summary(suite.results))
+
+        content_provider = GithubContentProvider(
+            repo_name=self.full_repo_name, pr_num=self.pr_number
+        )
+
+        # Create a comment on the PR with a short summary
+        pr_report = PRCommentReport(suite.results)
+        try:
+            print(pr_report.get_pre_run())
+            comment_dict = content_provider.create_pr_comment(pr_report.get_summary())
+        except Exception as e:
+            print(pr_report.get_error(e))
+        else:
+            print(pr_report.get_success(comment_dict))
 
         return suite.results

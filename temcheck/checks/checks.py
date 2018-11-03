@@ -47,7 +47,7 @@ class BranchNameCheck(Check):
         success = re.search(pattern, branch_name) is not None
         if not success:
             msg = (
-                'Branch name "{}" doesn\'t match pattern: "{}". '
+                'Branch name "{}" does not match pattern: "{}". '
                 'Explanation: {}'.format(
                     branch_name, pattern, self._from_config('pattern_descr')
                 )
@@ -91,7 +91,7 @@ class PRTitleCheck(Check):
 
         success = re.search(pattern, title) is not None
         if not success:
-            msg = 'PR title "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
+            msg = 'PR title "{}" does not match pattern: "{}". Explanation: {}'.format(
                 title, pattern, self._from_config('pattern_descr')
             )
             return self._get_failure(ERROR_INVALID_PR_TITLE, message=msg)
@@ -269,7 +269,7 @@ class CommitMessagesCheck(Check):
             return self._get_failure(
                 ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
                 message='Found {} commit message(s) that do not follow '
-                'the correct format'.format(len(failed_items)),
+                'the expected format'.format(len(failed_items)),
                 errors=failed_items,
             )
 

@@ -45,6 +45,15 @@ class GithubContentProvider(BaseContentProvider):
         """
         return github_service().get_pr(self.repo_name, self.pr_number)
 
+    def create_pr_comment(self, body):
+        """Create a comment on a pull request.
+
+        :param str body: the body of the comment
+        :return: a dictionary with information about the created comment
+        :rtype: dict
+        """
+        return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
+
 
 class PRContentProvider(GithubContentProvider):
     """Retrieves information of a pull request from Github.

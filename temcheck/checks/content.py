@@ -35,6 +35,13 @@ class BaseContentProvider:
         """
         raise NotImplemented()
 
+    def create_pr_comment(self, body):
+        """Create a comment on a pull request.
+
+        :param str body: the body of the comment
+        """
+        raise NotImplemented()
+
     @property
     def repo_name(self):
         return self.params['repo_name']

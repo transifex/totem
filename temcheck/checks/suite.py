@@ -8,7 +8,7 @@ from temcheck.checks.results import (
 
 
 class CheckSuite:
-    """Executes all checks and creates a report.
+    """Executes all checks and stores all results.
 
     This is a stateful class that keeps track of how each check went.
     It is the class that handles all the checks. All it requires is

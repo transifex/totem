@@ -44,3 +44,17 @@ class GithubService:
         repo = self.get_repo(repo_name)
         if repo:
             return repo.get_pull(pr_num)
+
+    def create_pr_comment(self, repo_name, pr_num, body):
+        """Create a comment on the pull request with the given info.
+
+        :param str repo_name:
+        :param int pr_num:
+        :param str body: the body of the comment to add
+        :return: a dictionary with information about the created comment
+        :rtype: dict
+        """
+        pr = self.get_pr(repo_name, pr_num)
+        issue = pr.as_issue()
+        comment = issue.create_comment(body)
+        return {'html_url': comment.html_url}
