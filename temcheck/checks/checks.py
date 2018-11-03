@@ -58,7 +58,7 @@ class BranchNameCheck(Check):
 
     def _default_config(self, name):
         if name == 'pattern':
-            return '^[\w\d]\-]+$'
+            return '^[\w\d\-]+$'
         elif name == 'pattern_descr':
             return (
                 'Branch name must only include lowercase characters, numbers and dashes'
