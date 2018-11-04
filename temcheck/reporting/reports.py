@@ -213,12 +213,14 @@ class PRCommentReport:
     """Creates reports to be added as comments on the pull request
     that is being checked."""
 
-    def __init__(self, results):
+    def __init__(self, results, details_url=None):
         """Constructor.
 
         :param CheckSuiteResults results: the object that contains the results
+        :param str details_url: the URL to visit for more details about the results
         """
         self.results = results
+        self.details_url = details_url
 
     def get_pre_run(self):
         """Return the text to print to the console before attempting
@@ -305,6 +307,11 @@ class PRCommentReport:
         for result in successful:
             builder.add('- **{}**'.format(result.config.check_type))
         builder.add()
+
+        if self.details_url:
+            builder.add('Visit the [details page]({}) for more information.'.format(
+                self.details_url
+            ))
 
         return builder.render()
 

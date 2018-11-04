@@ -33,7 +33,7 @@ class TemCheck:
      but also allows clients to register custom behaviour.
      """
 
-    def __init__(self, config_dict, pr_url):
+    def __init__(self, config_dict, pr_url, details_url=None):
         """Constructor.
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
@@ -45,10 +45,13 @@ class TemCheck:
         :param dict config_dict: the full configuration of the suite
             formatted as described in CheckSuite
         :param str pr_url: the URL of the pull request to check
+        :param str details_url: the URL to visit for more details about the results
+            e.g. this could be the CI page that ran the check suite
         """
         self._config_dict = config_dict
 
         self.pr_url = pr_url
+        self.details_url = details_url
         self.full_repo_name, self.pr_number = parse_pr_url(pr_url)
         self._content_provider_factory = ContentProviderFactory(
             self.full_repo_name, self.pr_number
@@ -98,7 +101,7 @@ class TemCheck:
         )
 
         # Create a comment on the PR with a short summary
-        pr_report = PRCommentReport(suite.results)
+        pr_report = PRCommentReport(suite.results, self.details_url)
         try:
             print(pr_report.get_pre_run())
             comment_dict = content_provider.create_pr_comment(pr_report.get_summary())
