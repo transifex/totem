@@ -217,6 +217,9 @@ class PRBodyExcludesCheck(Check):
 class CommitMessagesCheck(Check):
     """Makes sure that all commit messages of a PR are properly formatted."""
 
+    # These keys are in each failed commit dict
+    DEFAULT_KEYS = ('sha', 'url', 'commit_order')
+
     def run(self, content):
         """Check if the commit messages of a PR are properly formatted.
 
@@ -273,10 +276,21 @@ class CommitMessagesCheck(Check):
             )
 
         if failed_items:
+            # Find the IDs of all errors that occurred in the failed commit messages
+            # Do that by combining all keys from each error and removing the
+            # default keys that appear in each message, and removing duplicates
+            # by using a set
+            keys = set()
+            for error in failed_items:
+                keys.update(error.keys())
+            for default in CommitMessagesCheck.DEFAULT_KEYS:
+                keys.remove(default)
             return self._get_failure(
                 ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
                 message='Found {} commit message(s) that do not follow '
-                'the expected format'.format(len(failed_items)),
+                'the expected format (errors: {})'.format(
+                    len(failed_items), ', '.join(['"{}"'.format(k) for k in keys])
+                ),
                 errors=failed_items,
             )
 
@@ -382,7 +396,7 @@ class CommitMessagesCheck(Check):
                     actual_changes, min_body_lines, len(body_lines)
                 )
             )
-            errors['body_size'] = msg
+            errors['smart_body_size'] = msg
 
         return errors
 

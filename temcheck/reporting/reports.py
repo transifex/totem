@@ -278,40 +278,48 @@ class PRCommentReport:
         else:
             # Summary
             builder.add(
-                '> Quality check revealed {} failures, {} warnings '
+                '> Executed {} quality checks, revealing {} failures, {} warnings '
                 'and {} successful checks.\n'.format(
-                    len(errors), len(warnings), len(successful)
+                    len(errors) + len(warnings) + len(successful),
+                    len(errors),
+                    len(warnings),
+                    len(successful),
                 )
             )
 
             # Failures
-            builder.add(
-                '**Failures ({})** - *These need to be fixed!*'.format(len(errors))
-            )
-            for result in errors:
-                builder.add(PRCommentReport._format_result(result))
-            builder.add()
+            if len(errors):
+                builder.add(
+                    '**Failures ({})** - *These need to be fixed!*'.format(len(errors))
+                )
+                for result in errors:
+                    builder.add(PRCommentReport._format_result(result))
+                builder.add()
 
             # Warnings
-            builder.add(
-                '**Warnings ({})** - '
-                '*Fixing these may not be applicable, please review them '
-                'case by case*'.format(len(warnings))
-            )
-            for result in warnings:
-                builder.add(PRCommentReport._format_result(result))
+            if len(warnings):
+                builder.add(
+                    '**Warnings ({})** - '
+                    '*Fixing these may not be applicable, please review them '
+                    'case by case*'.format(len(warnings))
+                )
+                for result in warnings:
+                    builder.add(PRCommentReport._format_result(result))
+                builder.add()
+
+        # Successful checks
+        if len(successful):
+            builder.add('**Successful ({})** - *Good job!*'.format(len(successful)))
+            for result in successful:
+                builder.add('- **{}**'.format(result.config.check_type))
             builder.add()
 
-        # Successful checls
-        builder.add('**Successful ({})** - *Good job!*'.format(len(successful)))
-        for result in successful:
-            builder.add('- **{}**'.format(result.config.check_type))
-        builder.add()
-
         if self.details_url:
-            builder.add('Visit the [details page]({}) for more information.'.format(
-                self.details_url
-            ))
+            builder.add(
+                'Visit the [details page]({}) for more information.'.format(
+                    self.details_url
+                )
+            )
 
         return builder.render()
 
