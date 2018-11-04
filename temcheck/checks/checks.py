@@ -332,10 +332,12 @@ class CommitMessagesCheck(Check):
 
         # Check subject
         subject_config = self._from_config('subject')
-        max_length = subject_config.get('max_length', 0)
+        max_length = subject_config.get('max_length', None)
+        min_length = subject_config.get('min_length', None)
         subject_pattern = subject_config.get('pattern')
 
-        subject_length_ok = len(subject) <= max_length if max_length else True
+        subject_max_length_ok = len(subject) <= max_length if max_length else True
+        subject_min_length_ok = len(subject) >= min_length if min_length else True
         subject_pattern_ok = (
             re.search(subject_pattern, subject) is not None if subject_pattern else True
         )
@@ -361,7 +363,8 @@ class CommitMessagesCheck(Check):
                 body_size_ok = False
 
         all_conditions = [
-            subject_length_ok,
+            subject_max_length_ok,
+            subject_min_length_ok,
             subject_pattern_ok,
             body_length_ok,
             body_size_ok,
@@ -370,14 +373,15 @@ class CommitMessagesCheck(Check):
             return None
 
         errors = {'sha': commit['sha'], 'url': commit['url']}
-        if not subject_length_ok:
-            msg = 'Subject has {} characters but the limit is {}'.format(
-                len(subject), max_length
+
+        if not subject_max_length_ok or not subject_min_length_ok:
+            msg = 'Subject has {} characters but should be between {} and {}'.format(
+                len(subject), min_length, max_length
             )
             errors['subject_length'] = msg
 
         if not subject_pattern_ok:
-            msg = 'Subject does not follow pattern: {}. Explanation: {}'.format(
+            msg = 'Subject does not follow pattern: "{}". Explanation: {}'.format(
                 subject_pattern, subject_config.get('pattern_descr', 'None')
             )
             errors['subject_pattern'] = msg
@@ -403,6 +407,7 @@ class CommitMessagesCheck(Check):
     def _default_config(self, name):
         if name == 'subject':
             return {
+                'min_length': 8,
                 'max_length': 50,
                 'pattern': '^[A-Z].+(?<!\.)$',
                 'pattern_descr': (
