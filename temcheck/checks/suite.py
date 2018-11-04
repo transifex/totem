@@ -1,4 +1,3 @@
-from temcheck.checks.config import FAILURE_LEVEL_ERROR, CheckConfig
 from temcheck.checks.results import (
     ERROR_GENERIC,
     STATUS_ERROR,
@@ -20,25 +19,11 @@ class CheckSuite:
     All checks run synchronously.
     """
 
-    def __init__(self, all_configs, content_provider_factory, check_factory):
+    def __init__(self, config, content_provider_factory, check_factory):
         """Constructor.
 
-        :param dict all_configs: a dictionary that contains the configuration for
-            all checks, formatted like:
-            {
-              'branch_name': {
-                'pattern': '^TX-[0-9]+\-[\w\d\-]+$',
-                'failure_level': 'warning'
-              },
-              'pr_description_checkboxes': {
-                'failure_level': 'error',
-              },
-              'commit_message': {
-                'title_max_length': 52,
-                'body_max_length': 70,
-                'failure_level': 'error',
-              }
-            }
+        :param Config config: an object that contains all configuration options,
+            including the checks to run and the parameters for each
         :param BaseContentProviderFactory content_provider_factory: an object that
             knows how to create content providers for a specific Git service
         :param CheckFactory check_factory: an object that knows how to create
@@ -46,14 +31,7 @@ class CheckSuite:
         """
         self._content_provider_factory = content_provider_factory
         self._check_factory = check_factory
-        self.configs = {}
-
-        # Convert the configuration dictionary into CheckConfig objects
-        # and store them in memory
-        for check_type, config_dict in all_configs.items():
-            config = self._create_config(check_type, config_dict)
-            self.configs[check_type] = config
-
+        self.config = config
         self.results = CheckSuiteResults()
 
     def run(self):
@@ -62,7 +40,7 @@ class CheckSuite:
         Checks are executed synchronously, one by one.
         This is the main point of the application where the actual magic happens.
         """
-        for config in self.configs.values():
+        for check_type, config in self.config._check_configs.items():
             result = self._run_check(config, self._check_factory)
             self.results.add(result)
 
@@ -101,17 +79,3 @@ class CheckSuite:
             return check.run(content)
         except Exception as e:
             return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=str(e))
-
-    def _create_config(self, check_type, config_dict):
-        """Create a CheckConfig object with the given type and parameters.
-
-        :param str check_type: a string that shows what type of check
-            this config is about
-        :param dict config_dict: all configuration options
-        :return: the config object
-        :rtype: CheckConfig
-        """
-        config = dict(config_dict)
-        failure_level = config.pop('failure_level', FAILURE_LEVEL_ERROR)
-
-        return CheckConfig(check_type=check_type, failure_level=failure_level, **config)

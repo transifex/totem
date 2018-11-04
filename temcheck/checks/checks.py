@@ -390,10 +390,10 @@ class CommitMessagesCheck(Check):
 
         if not body_size_ok:
             msg = (
-                'There are {} changes in total on this commit, so the '
+                'There are more than {} changes in total on this commit, so the '
                 'commit message body should be at least {} lines long, '
                 'but it is {} instead'.format(
-                    actual_changes, min_body_lines, len(body_lines)
+                    min_changes, min_body_lines, len(body_lines)
                 )
             )
             errors['smart_body_size'] = msg

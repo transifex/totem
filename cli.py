@@ -1,9 +1,9 @@
 """Command Line Interface functionality. """
 
-import json
 import sys
 
 import click
+import yaml
 from temcheck.main import TemCheck
 
 
@@ -22,12 +22,16 @@ def main(pr_url, config_file, details_url=None):
     try:
         with open(config_file, 'r') as f:
             try:
-                config = json.load(f)
+                config = yaml.load(f)
             except Exception as e:
-                print('Error parsing config file as a JSON document, "%s"' % e)
+                print(
+                    'Error parsing config file "{}" as a YAML document: {}'.format(
+                        config_file, e
+                    )
+                )
                 sys.exit(1)
     except Exception as e:
-        print('Error opening config file, "%s"' % e)
+        print('Error opening config file: {}'.format(e))
         sys.exit(1)
 
     check = TemCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
