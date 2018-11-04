@@ -6,7 +6,7 @@ setup(
     description='Software to verify that GitHub PRs are compliant with the TEM '
     '(http://tem.transifex.com)',
     name='temcheck',
-    version='0.1',
+    version='0.2',
     packages=find_packages(),
     install_requires=['Click', 'PyGitHub==1.40a4', 'pyaml==17.12.1'],
     py_modules=['cli'],

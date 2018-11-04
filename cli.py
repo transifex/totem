@@ -4,7 +4,7 @@ import json
 import sys
 
 import click
-from main import TemCheck
+from temcheck.main import TemCheck
 
 
 @click.command()
