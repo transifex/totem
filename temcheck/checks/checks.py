@@ -220,6 +220,13 @@ class CommitMessagesCheck(Check):
     def run(self, content):
         """Check if the commit messages of a PR are properly formatted.
 
+        It checks for the following:
+         - Subject should follow a certain pattern
+         - Subject should have a maximum length
+         - Each line of the body (if exists) should have a maximum length
+         - If there are a lot of changes in the commit, there should be a body
+           with a certain minimum of total lines
+
         The content of `commits` should have the following format:
         'commits': [
             {'message': <message>, 'sha': <sha>, 'url': <url>},
@@ -245,7 +252,7 @@ class CommitMessagesCheck(Check):
             return self._get_error(
                 ERROR_INVALID_CONFIG,
                 message='Configuration for commit checks should include '
-                'a "body_config" key',
+                'a "body" key',
             )
 
         # Catch exceptions due to invalid format of the content
@@ -305,7 +312,9 @@ class CommitMessagesCheck(Check):
         if '' in lines:
             separator_index = lines.index('')
             subject = '\n'.join(lines[0:separator_index])
-            body_lines = lines[separator_index:]
+            # Get all body lines (start right after the empty line)
+            index = separator_index + 1
+            body_lines = lines[index:]
 
         # Check subject
         subject_config = self._from_config('subject')
@@ -317,33 +326,63 @@ class CommitMessagesCheck(Check):
             re.search(subject_pattern, subject) is not None if subject_pattern else True
         )
 
-        # Check body
+        # Check body line length
         body_config = self._from_config('body')
-        max_line_length = body_config.get('max_line_length', 0)
-        body_length_ok = all([len(x) <= max_line_length for x in body_lines])
+        max_line_length = body_config.get('max_line_length', None)
+        if max_line_length is None:
+            body_length_ok = True
+        else:
+            body_length_ok = all([len(x) <= max_line_length for x in body_lines])
 
-        if all([subject_length_ok, subject_pattern_ok, body_length_ok]):
+        # Smart check body: if there are a lot of changes on a commit
+        # there should be a body, not just a subject
+        body_size_ok = True
+        min_changes = body_config.get('smart_require', {}).get('min_changes')
+        actual_changes = None
+        min_body_lines = None
+        if min_changes is not None:
+            actual_changes = commit['stats']['total']
+            min_body_lines = body_config['smart_require'].get('min_body_lines', 1)
+            if actual_changes > min_changes and len(body_lines) < min_body_lines:
+                body_size_ok = False
+
+        all_conditions = [
+            subject_length_ok,
+            subject_pattern_ok,
+            body_length_ok,
+            body_size_ok,
+        ]
+        if all(all_conditions):
             return None
 
         errors = {'sha': commit['sha'], 'url': commit['url']}
         if not subject_length_ok:
-            errors[
-                'subject_length'
-            ] = 'Subject has {} characters but the limit is {}'.format(
+            msg = 'Subject has {} characters but the limit is {}'.format(
                 len(subject), max_length
             )
+            errors['subject_length'] = msg
+
         if not subject_pattern_ok:
-            errors[
-                'subject_pattern'
-            ] = 'Subject does not follow pattern: {}. Explanation: {}'.format(
+            msg = 'Subject does not follow pattern: {}. Explanation: {}'.format(
                 subject_pattern, subject_config.get('pattern_descr', 'None')
             )
+            errors['subject_pattern'] = msg
+
         if not body_length_ok:
-            errors[
-                'body_length'
-            ] = 'One or more lines of the body are longer than {} characters'.format(
+            msg = 'One or more lines of the body are longer than {} characters'.format(
                 max_line_length
             )
+            errors['body_length'] = msg
+
+        if not body_size_ok:
+            msg = (
+                'There are {} changes in total on this commit, so the '
+                'commit message body should be at least {} lines long, '
+                'but it is {} instead'.format(
+                    actual_changes, min_body_lines, len(body_lines)
+                )
+            )
+            errors['body_size'] = msg
 
         return errors
 
@@ -352,8 +391,13 @@ class CommitMessagesCheck(Check):
             return {
                 'max_length': 50,
                 'pattern': '^[A-Z].+(?<!\.)$',
-                'pattern_descr': 'Commit message subject must start with '
-                'a capital letter and not finish with a dot',
+                'pattern_descr': (
+                    'Commit message subject must start with '
+                    'a capital letter and not finish with a dot',
+                ),
             }
         elif name == 'body':
-            return {'max_line_length': 72}
+            return {
+                'max_line_length': 72,
+                'smart_require': {'min_changes': 100, 'min_body_lines': 1},
+            }

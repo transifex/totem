@@ -100,6 +100,11 @@ class PRCommitsContentProvider(GithubContentProvider):
                     'message': commit.commit.message,
                     'sha': commit.sha,
                     'url': commit.html_url,
+                    'stats': {
+                        'additions': commit.stats.additions,
+                        'deletions': commit.stats.deletions,
+                        'total': commit.stats.total,
+                    },
                 }
                 for commit in commits
             ]
