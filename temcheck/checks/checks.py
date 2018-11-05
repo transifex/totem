@@ -1,12 +1,16 @@
 import re
 
+from temcheck.checks.core import Check
 from temcheck.checks.results import (
-    CheckResult, STATUS_PASS, STATUS_ERROR, STATUS_FAIL,
-    ERROR_INVALID_CONFIG, ERROR_INVALID_CONTENT, ERROR_INVALID_BRANCH_NAME,
-    ERROR_INVALID_PR_TITLE, ERROR_UNFINISHED_CHECKLIST, ERROR_FORBIDDEN_PR_BODY_TEXT,
-    ERROR_MISSING_PR_BODY_TEXT, ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
+    ERROR_FORBIDDEN_PR_BODY_TEXT,
+    ERROR_INVALID_BRANCH_NAME,
+    ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
+    ERROR_INVALID_CONFIG,
+    ERROR_INVALID_CONTENT,
+    ERROR_INVALID_PR_TITLE,
+    ERROR_MISSING_PR_BODY_TEXT,
+    ERROR_UNFINISHED_CHECKLIST,
 )
-
 
 TYPE_BRANCH_NAME = 'branch_name'
 TYPE_PR_TITLE = 'pr_title'
@@ -14,97 +18,6 @@ TYPE_PR_BODY_CHECKLIST = 'pr_body_checklist'
 TYPE_PR_BODY_INCLUDES = 'pr_body_includes'
 TYPE_PR_BODY_EXCLUDES = 'pr_body_excludes'
 TYPE_COMMIT_MESSAGE = 'commit_message'
-
-
-class Check:
-    """A base class for all classes that want to perform checks.
-
-    Subclasses could be named like CommitMessageCheck, PRDescriptionCheck, etc.
-    Each subclass should override the `run()` method.
-
-    Subclasses can perform a very small, isolated check or perform multiple checks
-    that are somehow "connected" together. For example, a subclass could only
-    check if a branch name starts with a certain prefix, whereas another subclass could
-    test 4-5 different things about a PR description that make sense to be grouped
-    together.
-    """
-
-    def __init__(self, config):
-        """Constructor.
-
-        :param CheckConfig config: the configuration to use when performing the check
-            in case specific things need to be taken into account
-        """
-        self._config = config
-
-    def run(self, content):
-        """Execute the check for the current parameters and return the result.
-
-        :param dict content: contains parameters with the actual content to check,
-            e.g. the commit message string for a checker that deals with commit messages
-        :return: the result of performing the check
-        :rtype: CheckResult
-        """
-        raise NotImplemented()
-
-    @property
-    def check_type(self):
-        return self._config.check_type
-
-    def _from_config(self, name, default=None):
-        """Return a parameter from the configuration options dictionary.
-
-        If the options dictionary does not contain an entry with this name,
-        it returns the `default` value provided in the call,
-        otherwise the return value of _default_config().
-        If no value is provider there either, it returns `None`.
-        """
-        default = default if default is not None else self._default_config(name)
-        return self._config.options.get(name, default)
-
-    def _default_config(self, name):
-        """Return the default value that corresponds to the given option name.
-
-        By default, this value is always `None`. Subclasses can override this
-        functionality and provide custom values depending on the option name.
-        """
-        return None
-
-    def _get_success(self, **details):
-        """Return a successful result.
-
-        This means that the check was executed and passed.
-        """
-        return CheckResult(
-            self._config,
-            STATUS_PASS,
-            **details,
-        )
-
-    def _get_failure(self, error_code, message, **details):
-        """Return a failed result.
-
-        This means that the check was executed and failed."""
-        return CheckResult(
-            self._config,
-            STATUS_FAIL,
-            error_code=error_code,
-            message=message,
-            **details,
-        )
-
-    def _get_error(self, error_code, message, **details):
-        """Return an erroneous result.
-
-        This means that the check could not execute due to an error.
-        """
-        return CheckResult(
-            self._config,
-            STATUS_ERROR,
-            error_code=error_code,
-            message=message,
-            **details,
-        )
 
 
 class BranchNameCheck(Check):
@@ -122,8 +35,7 @@ class BranchNameCheck(Check):
 
         if not branch_name:
             return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='Branch name not defined or empty',
+                ERROR_INVALID_CONTENT, message='Branch name not defined or empty'
             )
 
         if not pattern:
@@ -134,25 +46,23 @@ class BranchNameCheck(Check):
 
         success = re.search(pattern, branch_name) is not None
         if not success:
-            msg = 'Branch name "{}" doesn\'t match pattern: "{}". ' \
-                  'Explanation: {}'.format(
-                    branch_name,
-                    pattern,
-                    self._from_config('pattern_descr')
+            msg = (
+                'Branch name "{}" does not match pattern: "{}". '
+                'Explanation: {}'.format(
+                    branch_name, pattern, self._from_config('pattern_descr')
+                )
             )
-            return self._get_failure(
-                ERROR_INVALID_BRANCH_NAME,
-                message=msg,
-            )
+            return self._get_failure(ERROR_INVALID_BRANCH_NAME, message=msg)
 
         return self._get_success()
 
     def _default_config(self, name):
         if name == 'pattern':
-            return '^[\w\d]\-]+$'
+            return '^[\w\d\-]+$'
         elif name == 'pattern_descr':
-            return 'Branch name must only include lowercase characters, numbers ' \
-                   'and dashes'
+            return (
+                'Branch name must only include lowercase characters, numbers and dashes'
+            )
 
 
 class PRTitleCheck(Check):
@@ -170,8 +80,7 @@ class PRTitleCheck(Check):
 
         if not title:
             return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='PR title not defined or empty',
+                ERROR_INVALID_CONTENT, message='PR title not defined or empty'
             )
 
         if not pattern:
@@ -182,15 +91,10 @@ class PRTitleCheck(Check):
 
         success = re.search(pattern, title) is not None
         if not success:
-            msg = 'PR title "{}" doesn\'t match pattern: "{}". Explanation: {}'.format(
-                title,
-                pattern,
-                self._from_config('pattern_descr')
+            msg = 'PR title "{}" does not match pattern: "{}". Explanation: {}'.format(
+                title, pattern, self._from_config('pattern_descr')
             )
-            return self._get_failure(
-                ERROR_INVALID_PR_TITLE,
-                message=msg
-            )
+            return self._get_failure(ERROR_INVALID_PR_TITLE, message=msg)
 
         return self._get_success()
 
@@ -228,7 +132,7 @@ class PRBodyChecklistCheck(Check):
         if matches:
             return self._get_failure(
                 ERROR_UNFINISHED_CHECKLIST,
-                message='Found {} unfinished checklist items'.format(len(matches))
+                message='Found {} unfinished checklist items'.format(len(matches)),
             )
 
         return self._get_success()
@@ -313,8 +217,18 @@ class PRBodyExcludesCheck(Check):
 class CommitMessagesCheck(Check):
     """Makes sure that all commit messages of a PR are properly formatted."""
 
+    # These keys are in each failed commit dict
+    DEFAULT_KEYS = ('sha', 'url', 'commit_order')
+
     def run(self, content):
         """Check if the commit messages of a PR are properly formatted.
+
+        It checks for the following:
+         - Subject should follow a certain pattern
+         - Subject should have a maximum length
+         - Each line of the body (if exists) should have a maximum length
+         - If there are a lot of changes in the commit, there should be a body
+           with a certain minimum of total lines
 
         The content of `commits` should have the following format:
         'commits': [
@@ -334,14 +248,14 @@ class CommitMessagesCheck(Check):
             return self._get_error(
                 ERROR_INVALID_CONFIG,
                 message='Configuration for commit checks should include '
-                        'a "subject" key',
+                'a "subject" key',
             )
         body_config = self._from_config('body')
         if not body_config:
             return self._get_error(
                 ERROR_INVALID_CONFIG,
                 message='Configuration for commit checks should include '
-                        'a "body_config" key',
+                'a "body" key',
             )
 
         # Catch exceptions due to invalid format of the content
@@ -362,12 +276,21 @@ class CommitMessagesCheck(Check):
             )
 
         if failed_items:
+            # Find the IDs of all errors that occurred in the failed commit messages
+            # Do that by combining all keys from each error and removing the
+            # default keys that appear in each message, and removing duplicates
+            # by using a set
+            keys = set()
+            for error in failed_items:
+                keys.update(error.keys())
+            for default in CommitMessagesCheck.DEFAULT_KEYS:
+                keys.remove(default)
             return self._get_failure(
                 ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
                 message='Found {} commit message(s) that do not follow '
-                        'the correct format'.format(
-                            len(failed_items)
-                        ),
+                'the expected format (errors: {})'.format(
+                    len(failed_items), ', '.join(['"{}"'.format(k) for k in keys])
+                ),
                 errors=failed_items,
             )
 
@@ -403,111 +326,97 @@ class CommitMessagesCheck(Check):
         if '' in lines:
             separator_index = lines.index('')
             subject = '\n'.join(lines[0:separator_index])
-            body_lines = lines[separator_index:]
+            # Get all body lines (start right after the empty line)
+            index = separator_index + 1
+            body_lines = lines[index:]
 
         # Check subject
         subject_config = self._from_config('subject')
-        max_length = subject_config.get('max_length', 0)
+        max_length = subject_config.get('max_length', None)
+        min_length = subject_config.get('min_length', None)
         subject_pattern = subject_config.get('pattern')
 
-        subject_length_ok = len(subject) <= max_length if max_length else True
-        subject_pattern_ok = re.search(subject_pattern, subject) is not None \
-            if subject_pattern else True
+        subject_max_length_ok = len(subject) <= max_length if max_length else True
+        subject_min_length_ok = len(subject) >= min_length if min_length else True
+        subject_pattern_ok = (
+            re.search(subject_pattern, subject) is not None if subject_pattern else True
+        )
 
-        # Check body
+        # Check body line length
         body_config = self._from_config('body')
-        max_line_length = body_config.get('max_line_length', 0)
-        body_length_ok = all([len(x) <= max_line_length for x in body_lines])
+        max_line_length = body_config.get('max_line_length', None)
+        if max_line_length is None:
+            body_length_ok = True
+        else:
+            body_length_ok = all([len(x) <= max_line_length for x in body_lines])
 
-        if all([subject_length_ok, subject_pattern_ok, body_length_ok]):
+        # Smart check body: if there are a lot of changes on a commit
+        # there should be a body, not just a subject
+        body_size_ok = True
+        min_changes = body_config.get('smart_require', {}).get('min_changes')
+        actual_changes = None
+        min_body_lines = None
+        if min_changes is not None:
+            actual_changes = commit['stats']['total']
+            min_body_lines = body_config['smart_require'].get('min_body_lines', 1)
+            if actual_changes > min_changes and len(body_lines) < min_body_lines:
+                body_size_ok = False
+
+        all_conditions = [
+            subject_max_length_ok,
+            subject_min_length_ok,
+            subject_pattern_ok,
+            body_length_ok,
+            body_size_ok,
+        ]
+        if all(all_conditions):
             return None
 
-        errors = {
-            'sha': commit['sha'],
-            'url': commit['url'],
-        }
-        if not subject_length_ok:
-            errors['subject_length'] = \
-                'Subject has {} characters but the limit is {}'.format(
-                    len(subject),
-                    max_length,
-                )
+        errors = {'sha': commit['sha'], 'url': commit['url']}
+
+        if not subject_max_length_ok or not subject_min_length_ok:
+            msg = 'Subject has {} characters but should be between {} and {}'.format(
+                len(subject), min_length, max_length
+            )
+            errors['subject_length'] = msg
+
         if not subject_pattern_ok:
-            errors['subject_pattern'] = \
-                'Subject does not follow pattern: {}. Explanation: {}'.format(
-                    subject_pattern,
-                    subject_config.get('pattern_descr', 'None')
-                )
+            msg = 'Subject does not follow pattern: "{}". Explanation: {}'.format(
+                subject_pattern, subject_config.get('pattern_descr', 'None')
+            )
+            errors['subject_pattern'] = msg
+
         if not body_length_ok:
-            errors['body_length'] = \
-                'One or more lines of the body are longer than {} characters'.format(
-                    max_line_length,
+            msg = 'One or more lines of the body are longer than {} characters'.format(
+                max_line_length
+            )
+            errors['body_length'] = msg
+
+        if not body_size_ok:
+            msg = (
+                'There are more than {} changes in total on this commit, so the '
+                'commit message body should be at least {} lines long, '
+                'but it is {} instead'.format(
+                    min_changes, min_body_lines, len(body_lines)
                 )
+            )
+            errors['smart_body_size'] = msg
 
         return errors
 
     def _default_config(self, name):
         if name == 'subject':
             return {
+                'min_length': 8,
                 'max_length': 50,
                 'pattern': '^[A-Z].+(?<!\.)$',
-                'pattern_descr': 'Commit message subject must start with '
-                                 'a capital letter and not finish with a dot',
+                'pattern_descr': (
+                    'Commit message subject must start with '
+                    'a capital letter and not finish with a dot',
+                ),
             }
         elif name == 'body':
             return {
                 'max_line_length': 72,
+                'smart_require': {'min_changes': 100, 'min_body_lines': 1},
             }
-
-
-class CheckFactory:
-    """Responsible for creating Check subclasses.
-
-    Allows clients to add custom functionality, by providing a custom
-    Check subclass, tied to a custom configuration type.
-    """
-
-    def __init__(self):
-        self._checks = {}
-        self._register_defaults()
-
-    def register(self, config_type, check_class):
-        """Register the given check class for the given configuration type.
-
-        Allows clients to add custom functionality, by providing a custom
-        Check subclass, tied to a custom configuration type.
-
-        :param str config_type: an identifier that will be associated with
-            the given check
-        :param type check_class: the class that will be used to create
-            an instance from; needs to be a Check subclass
-        """
-        self._checks[config_type] = check_class
-
-    def _register_defaults(self):
-        """Register all default checks."""
-        defaults = {
-            TYPE_BRANCH_NAME: BranchNameCheck,
-            TYPE_PR_TITLE: PRTitleCheck,
-            TYPE_PR_BODY_CHECKLIST: PRBodyChecklistCheck,
-            TYPE_PR_BODY_INCLUDES: PRBodyIncludesCheck,
-            TYPE_PR_BODY_EXCLUDES: PRBodyExcludesCheck,
-            TYPE_COMMIT_MESSAGE: CommitMessagesCheck,
-        }
-        for config_type, check_class in defaults.items():
-            self.register(config_type, check_class)
-
-    def create(self, config):
-        """Create the proper Check subclass based on the given configuration.
-
-        :param CheckConfig config: the configuration object to use
-        :return: returns a check object
-        :rtype: Check
-        """
-        config_type = config.check_type
-
-        cls = self._checks.get(config_type, None)
-        if cls is None:
-            return None
-
-        return cls(config)

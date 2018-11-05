@@ -1,6 +1,5 @@
 from temcheck.checks.config import FAILURE_LEVEL_ERROR, FAILURE_LEVEL_WARNING
 
-
 STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed
 STATUS_ERROR = 'error'  # The check could not be executed because of an error
@@ -23,7 +22,8 @@ class CheckResult:
     def __init__(self, config, status, error_code=None, **details):
         """Constructor.
 
-        :param CheckConfig config: the related configuration with which the check was run
+        :param CheckConfig config: the related configuration with which the
+            check was run
         :param str status: the status that shows how the check went,
             one of STATUS_PASS, STATUS_FAIL, STATUS_ERROR
         :param str error_code: a string that
@@ -49,10 +49,7 @@ class CheckResult:
 
     def __str__(self):
         return 'CheckResult type={}, status={}, error_code={}, details={}'.format(
-            self.config.check_type,
-            self.status,
-            self.error_code,
-            self.details,
+            self.config.check_type, self.status, self.error_code, self.details
         )
 
     def __repr__(self):
@@ -91,7 +88,8 @@ class CheckSuiteResults:
         """A list of all CheckResult objects that failed the check
         and are considered to be non-required (warning level)."""
         return [
-            result for result in self._failed
+            result
+            for result in self._failed
             if result.failure_level == FAILURE_LEVEL_WARNING
         ]
 
@@ -100,6 +98,7 @@ class CheckSuiteResults:
         """A list of all CheckResult objects that failed the check
         and are considered to be required (error level)."""
         return [
-            result for result in self._failed
+            result
+            for result in self._failed
             if result.failure_level == FAILURE_LEVEL_ERROR
         ]
