@@ -324,7 +324,10 @@ class PRCommentReport:
                 builder.add()
 
         # Successful checks
-        if len(successful) or show_empty_sections:
+        show_successful = self.suite.config.pr_comment_report.get(
+            'show_successful', True
+        )
+        if show_successful and (len(successful) or show_empty_sections):
             builder.add(
                 ':white_check_mark: **Successful ({})** '
                 '- *Good job on these!*'.format(len(successful))
