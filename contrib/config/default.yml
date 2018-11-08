@@ -7,6 +7,7 @@ settings:
     show_empty_sections: True
     show_message: True
     show_details: True
+    show_successful: True
 checks:
   branch_name:
     pattern: ^[\w\d\-]+$

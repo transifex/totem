@@ -271,31 +271,42 @@ class PRCommentReport:
         builder.add('# Pull Request Health Check')
         builder.add(
             'Checking if this PR follows the expected quality standards. '
-            'Powered by [temcheck](https://www.github.com/transifex/temcheck).'
+            'Powered by [temcheck](https://www.github.com/transifex/temcheck).\n'
         )
 
         comment_settings = self.suite.config.pr_comment_report
         show_empty_sections = comment_settings.get('show_empty_sections', True)
 
         if total == 0:
-            builder.add('> No quality checks found to run. Please update your config!')
+            builder.add(
+                ':interrobang: No quality checks found to run. '
+                'Please update your config!'
+            )
         elif len(errors) + len(warnings) == 0:
             builder.add(
-                '> All {} quality checks have passed! Good job!'.format(len(successful))
+                ':white_check_mark: All {} quality checks have passed! '
+                'Good job!'.format(len(successful))
             )
         else:
             # Summary
+            total_errors = len(errors)
+            total_warnings = len(warnings)
+            total_successful = len(successful)
             builder.add(
-                '> Executed {} quality checks, revealing {} failures, {} warnings '
-                'and {} successful checks.\n'.format(
-                    total, len(errors), len(warnings), len(successful)
+                'failures | warnings | successful\n'
+                '----------- | ------------- | -------------\n'
+                '|{} | {} | {}\n'.format(
+                    total_errors if total_errors else '-',
+                    total_warnings if total_warnings else '-',
+                    total_successful if total_successful else '-',
                 )
             )
 
             # Failures
             if len(errors) or show_empty_sections:
                 builder.add(
-                    '**Failures ({})** - *These need to be fixed!*'.format(len(errors))
+                    ':bangbang: **Failures ({})** '
+                    '- *These need to be fixed!*'.format(len(errors))
                 )
                 for result in errors:
                     builder.add(self._format_result(result))
@@ -304,7 +315,7 @@ class PRCommentReport:
             # Warnings
             if len(warnings) or show_empty_sections:
                 builder.add(
-                    '**Warnings ({})** - '
+                    ':eight_pointed_black_star: **Warnings ({})** - '
                     '*Fixing these may not be applicable, please review them '
                     'case by case*'.format(len(warnings))
                 )
@@ -313,9 +324,13 @@ class PRCommentReport:
                 builder.add()
 
         # Successful checks
-        if len(successful) or show_empty_sections:
+        show_successful = self.suite.config.pr_comment_report.get(
+            'show_successful', True
+        )
+        if show_successful and (len(successful) or show_empty_sections):
             builder.add(
-                '**Successful ({})** - *Good job on these!*'.format(len(successful))
+                ':white_check_mark: **Successful ({})** '
+                '- *Good job on these!*'.format(len(successful))
             )
             for result in successful:
                 builder.add('- **{}**'.format(result.config.check_type))

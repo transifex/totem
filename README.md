@@ -46,6 +46,11 @@ For example, with CircleCI you need to make the following call:
 temcheck --pr-url $CIRCLE_PULL_REQUEST --config-file .circleci/temcheck.yml --details-url $CIRCLE_BUILD_URL
 ```
 
+## Github authentication
+In order to run TemCheck on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, all you have to do is to add an environment variable with the Github access token:
+`GITHUB_ACCESS_TOKEN='<my_super_secret_token>`
+
+
 # Checks
 
 TemCheck supports the following checks:
