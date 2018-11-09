@@ -4,6 +4,7 @@
 settings:
   pr_comment_report:
     enabled: False
+    delete_previous: False
     show_empty_sections: True
     show_message: True
     show_details: True
