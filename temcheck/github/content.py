@@ -21,6 +21,7 @@ from temcheck.checks.checks import (
 )
 from temcheck.checks.content import BaseContentProvider, BaseContentProviderFactory
 from temcheck.github import github_service
+from temcheck.reporting.pr import PRCommentReport
 
 
 class GithubContentProvider(BaseContentProvider):
@@ -45,15 +46,6 @@ class GithubContentProvider(BaseContentProvider):
         """
         return github_service().get_pr(self.repo_name, self.pr_number)
 
-    def create_pr_comment(self, body):
-        """Create a comment on a pull request.
-
-        :param str body: the body of the comment
-        :return: a dictionary with information about the created comment
-        :rtype: dict
-        """
-        return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
-
 
 class PRContentProvider(GithubContentProvider):
     """Retrieves information of a pull request from Github.
@@ -73,6 +65,42 @@ class PRContentProvider(GithubContentProvider):
         """Return a dictionary that contains various information about the PR."""
         pr = self.get_pr()
         return {'branch': pr.head.ref, 'title': pr.title, 'body': pr.body}
+
+    def create_pr_comment(self, body):
+        """Create a comment on a pull request.
+
+        :param str body: the body of the comment
+        :return: a dictionary with information about the created comment
+        :rtype: dict
+        """
+        return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
+
+    def delete_previous_pr_comment(self, latest_comment_id):
+        """Delete the previous temcheck comment on the PR.
+
+        Only deletes 1 comment. `latest_comment_id` is given
+        for ensuring that the newest comment will not be deleted.
+
+        :param int latest_comment_id: the ID of the comment to leave intact
+        :return: True if the previous comment was deleted, False otherwise
+        :rtype: bool
+        """
+        comments = github_service().get_pr_comments(self.repo_name, self.pr_number)
+        comments = [
+            x
+            for x in comments
+            if x['body'].startswith(PRCommentReport.TITLE)
+            and x['id'] != latest_comment_id
+        ]
+        comments = sorted(comments, key=lambda c: c['updated_at'])
+
+        if not len(comments):
+            return False
+
+        comment = comments[-1]
+        return github_service().delete_pr_comment(
+            self.repo_name, self.pr_number, comment['id']
+        )
 
 
 class PRCommitsContentProvider(GithubContentProvider):

@@ -48,8 +48,8 @@ class GithubService:
     def create_pr_comment(self, repo_name, pr_num, body):
         """Create a comment on the pull request with the given info.
 
-        :param str repo_name:
-        :param int pr_num:
+        :param str repo_name: the name of the repository the PR is in
+        :param int pr_num: the identifier of the pull request
         :param str body: the body of the comment to add
         :return: a dictionary with information about the created comment
         :rtype: dict
@@ -57,4 +57,42 @@ class GithubService:
         pr = self.get_pr(repo_name, pr_num)
         issue = pr.as_issue()
         comment = issue.create_comment(body)
-        return {'html_url': comment.html_url}
+        return {'id': comment.id, 'html_url': comment.html_url}
+
+    def get_pr_comments(self, repo_name, pr_num):
+        """Return a list of comments on the PR with the given number.
+
+        :param str repo_name: the name of the repository the PR is in
+        :param int pr_num: the identifier of the pull request
+        :return: a list of all comments, formatted as:
+            [
+              {'id': <comment_id>, 'body': <body>, 'updated_at': <updated_at>},
+              ...
+            ]
+        :rtype: list
+        """
+        pr = self.get_pr(repo_name, pr_num)
+        issue = pr.as_issue()
+        comments = issue.get_comments()
+        return [
+            {'id': comment.id, 'body': comment.body, 'updated_at': comment.updated_at}
+            for comment in comments
+        ]
+
+    def delete_pr_comment(self, repo_name, pr_num, comment_id):
+        """Delete the PR comment with the given id
+
+        :param str repo_name: the name of the repository the PR is in
+        :param int pr_num: the identifier of the pull request
+        :param int comment_id: the ID of the comment to delete
+        :return: True if found and deleted successfully, False otherwise
+        :rtype: bool
+        """
+        pr = self.get_pr(repo_name, pr_num)
+        issue = pr.as_issue()
+        comment = issue.get_comment(comment_id)
+        if comment is None:
+            return False
+
+        comment.delete()
+        return True

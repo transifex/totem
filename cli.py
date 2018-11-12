@@ -5,13 +5,10 @@ import sys
 import click
 import yaml
 from temcheck.main import TemCheck
+from temcheck.reporting.console import Color
 
 
-@click.command()
-@click.option('-p', '--pr-url', required=True, type=str)
-@click.option('-c', '--config-file', required=False, type=str)
-@click.option('--details-url', required=False, type=str)
-def main(pr_url, config_file=None, details_url=None):
+def run_checks(pr_url, config_file=None, details_url=None):
     """Run all checks described in `config_file` for the PR on the given URL.
 
     :param str pr_url: the URL of the pull request as retrieved from the CI
@@ -27,16 +24,34 @@ def main(pr_url, config_file=None, details_url=None):
                 config = yaml.load(f)
             except Exception as e:
                 print(
-                    'Error parsing config file "{}" as a YAML document: {}'.format(
-                        config_file, e
+                    Color.format(
+                        '[error]Error parsing config file "{}" as a YAML document: '
+                        '{}[end]'.format(config_file, e)
                     )
                 )
                 sys.exit(1)
     except Exception as e:
-        print('Error opening config file: {}'.format(e))
+        print(Color.format('[error]Error opening config file: {}[end]'.format(e)))
         sys.exit(1)
 
     check = TemCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
     results = check.run()
     if results.errors:
         sys.exit(1)
+
+
+@click.command()
+@click.option('-p', '--pr-url', required=True, type=str)
+@click.option('-c', '--config-file', required=False, type=str)
+@click.option('--details-url', required=False, type=str)
+def main(pr_url, config_file=None, details_url=None):
+    """Run all checks described in `config_file` for the PR on the given URL.
+
+    A command line function.
+
+    :param str pr_url: the URL of the pull request as retrieved from the CI
+    :param str config_file: the path of the configuration file,
+        formatted in YAML, as found in contrib/config/sample.yml
+    :param str details_url: the URL to visit for more details about the results
+    """
+    run_checks(pr_url=pr_url, config_file=config_file, details_url=details_url)
