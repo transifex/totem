@@ -9,6 +9,16 @@ settings:
     show_message: True
     show_details: True
     show_successful: True
+  console_report:
+    show_empty_sections: True
+    show_message: True
+    show_details: True
+    show_successful: True
+  local_console_report:
+    show_empty_sections: False
+    show_message: True
+    show_details: True
+    show_successful: False
 checks:
   branch_name:
     pattern: ^[\w\d\-]+$

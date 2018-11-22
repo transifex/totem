@@ -36,11 +36,28 @@ class Color:
         print(Color.format(string))
 
 
-class ConsoleReport:
-    """Creates reports to be used as console output when the checks run."""
+class BaseConsoleReport:
+    """Creates reports to be used as console output when the checks run.
 
-    @staticmethod
-    def get_pre_run_report(config, pr_url):
+    A base class for classes that want to act as console output handlers.
+    Subclasses need to override the `report_details` property,
+    in order to return the proper configuration of the report.
+    """
+
+    def __init__(self, suite):
+        """Constructor.
+
+        :param CheckSuite suite: the check suite that was executed
+        """
+        self.suite = suite
+
+    @property
+    def report_details(self):
+        # Subclasses need to override this, in order to return the proper
+        # configuration, from the corresponding property of the `Config` class
+        raise NotImplementedError()
+
+    def get_pre_run_report(self, config, pr_url):
         """Print a message before running the checks.
 
         :param Config config: the configuration that will be used
@@ -61,49 +78,56 @@ class ConsoleReport:
         builder.add()
         return builder.render()
 
-    @staticmethod
-    def get_detailed_results(results):
+    def get_detailed_results(self, results):
         """Return a string with all results in detail.
 
         :param CheckSuiteResults results: the object that contains the results
         :return: the detailed string
         :rtype: str
         """
-        errors = results.errors
         builder = StringBuilder()
 
-        builder.add(
-            Color.format(
-                '\n[error]Failures ({})[end]\n-----------------'.format(len(errors))
-            )
-        )
-        for result in errors:
-            builder.add(ConsoleReport._format_result(result))
+        comment_settings = self.report_details
+        show_empty_sections = comment_settings.get('show_empty_sections', True)
 
-        warnings = results.warnings
-        builder.add(
-            Color.format(
-                '\n[warning]Warnings ({})[end]\n-----------------'.format(len(warnings))
-            )
-        )
-        for result in warnings:
-            builder.add(ConsoleReport._format_result(result))
-
-        successful = results.successful
-        builder.add(
-            Color.format(
-                '\n[pass]Successful checks ({})[end]\n-----------------'.format(
-                    len(successful)
+        errors = results.errors
+        if len(errors) or show_empty_sections:
+            builder.add(
+                Color.format(
+                    '\n[error]Failures ({})[end]\n-----------------'.format(len(errors))
                 )
             )
-        )
-        for result in successful:
-            builder.add(ConsoleReport._format_result(result))
+            for result in errors:
+                builder.add(PRConsoleReport._format_result(result))
+
+        warnings = results.warnings
+        if len(warnings) or show_empty_sections:
+            builder.add(
+                Color.format(
+                    '\n[warning]Warnings ({})[end]\n-----------------'.format(
+                        len(warnings)
+                    )
+                )
+            )
+            for result in warnings:
+                builder.add(PRConsoleReport._format_result(result))
+
+        show_successful = comment_settings.get('show_successful', True)
+        successful = results.successful
+        if show_successful and (len(successful) or show_empty_sections):
+            builder.add(
+                Color.format(
+                    '\n[pass]Successful checks ({})[end]\n-----------------'.format(
+                        len(successful)
+                    )
+                )
+            )
+            for result in successful:
+                builder.add(PRConsoleReport._format_result(result))
 
         return builder.render()
 
-    @staticmethod
-    def get_summary(results):
+    def get_summary(self, results):
         """Get a short summary of all results.
 
         :param CheckSuiteResults results: the object that contains the results
@@ -117,36 +141,47 @@ class ConsoleReport:
         builder.add('\n\n')
         builder.add('SUMMARY')
         builder.add('-------')
-        builder.add(
-            Color.format(
-                '[fail]Failures ({})[end] - These need to be fixed'.format(len(errors))
-            )
-        )
-        for result in errors:
-            builder.add(
-                Color.format('- [check][{}][end]'.format(result.config.check_type))
-            )
-        builder.add()
 
-        builder.add(
-            Color.format(
-                '[warning]Warnings ({})[end] - '
-                'Fixing these may not be applicable, please review them '
-                'case by case'.format(len(warnings))
-            )
-        )
-        for result in warnings:
-            builder.add(
-                Color.format('- [check][{}][end]'.format(result.config.check_type))
-            )
-        builder.add()
+        comment_settings = self.report_details
+        show_empty_sections = comment_settings.get('show_empty_sections', True)
 
-        builder.add(Color.format('[pass]Successful ({})[end]'.format(len(successful))))
-        for result in successful:
+        if len(errors) or show_empty_sections:
             builder.add(
-                Color.format('- [check][{}][end]'.format(result.config.check_type))
+                Color.format(
+                    '[fail]Failures ({})[end] - These need to be fixed'.format(
+                        len(errors)
+                    )
+                )
             )
-        builder.add()
+            for result in errors:
+                builder.add(
+                    Color.format('- [check][{}][end]'.format(result.config.check_type))
+                )
+            builder.add()
+
+        if len(warnings) or show_empty_sections:
+            builder.add(
+                Color.format(
+                    '[warning]Warnings ({})[end] - '
+                    'Fixing these may not be applicable, please review them '
+                    'case by case'.format(len(warnings))
+                )
+            )
+            for result in warnings:
+                builder.add(
+                    Color.format('- [check][{}][end]'.format(result.config.check_type))
+                )
+            builder.add()
+
+        if len(successful) or show_empty_sections:
+            builder.add(
+                Color.format('[pass]Successful ({})[end]'.format(len(successful)))
+            )
+            for result in successful:
+                builder.add(
+                    Color.format('- [check][{}][end]'.format(result.config.check_type))
+                )
+            builder.add()
 
         return builder.render()
 
@@ -233,3 +268,21 @@ class ConsoleReport:
             builder.add()
 
         return builder.render()
+
+
+class PRConsoleReport(BaseConsoleReport):
+    """Creates reports to be used as console output when the checks run
+    on a pull request."""
+
+    @property
+    def report_details(self):
+        return self.suite.config.pr_console_report
+
+
+class LocalConsoleReport(BaseConsoleReport):
+    """Creates reports to be used as console output when the checks run
+    on a local Git repository."""
+
+    @property
+    def report_details(self):
+        return self.suite.config.local_console_report

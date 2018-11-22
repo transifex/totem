@@ -19,6 +19,15 @@ TYPE_PR_BODY_INCLUDES = 'pr_body_includes'
 TYPE_PR_BODY_EXCLUDES = 'pr_body_excludes'
 TYPE_COMMIT_MESSAGE = 'commit_message'
 
+# These checks require a PR to exist, so they cannot be performed
+# on a local repository
+PR_TYPES_CHECKS = (
+    TYPE_PR_TITLE,
+    TYPE_PR_BODY_CHECKLIST,
+    TYPE_PR_BODY_INCLUDES,
+    TYPE_PR_BODY_EXCLUDES,
+)
+
 
 class BranchNameCheck(Check):
     """Checks whether or not a branch name follows a certain format."""
@@ -372,7 +381,11 @@ class CommitMessagesCheck(Check):
         if all(all_conditions):
             return None
 
-        errors = {'sha': commit['sha'], 'url': commit['url']}
+        errors = {
+            'sha': commit['sha'],
+            'url': commit['url'],
+            'message': commit['message'],
+        }
 
         if not subject_max_length_ok or not subject_min_length_ok:
             msg = 'Subject has {} characters but should be between {} and {}'.format(
@@ -394,10 +407,11 @@ class CommitMessagesCheck(Check):
 
         if not body_size_ok:
             msg = (
-                'There are more than {} changes in total on this commit, so the '
+                'There are more than {} changes in total on this commit '
+                '({} to be exact), so the '
                 'commit message body should be at least {} lines long, '
                 'but it is {} instead'.format(
-                    min_changes, min_body_lines, len(body_lines)
+                    min_changes, actual_changes, min_body_lines, len(body_lines)
                 )
             )
             errors['smart_body_size'] = msg

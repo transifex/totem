@@ -1,4 +1,3 @@
-
 FAILURE_LEVEL_WARNING = 'warning'
 FAILURE_LEVEL_ERROR = 'error'
 
@@ -65,8 +64,22 @@ class Config:
         return self._settings
 
     @property
+    def check_configs(self):
+        """Contains all the configuration for the checks,
+        with the check type as the key and a CheckConfig object
+        as the value
+
+        :return: the configurations for all checks
+        :rtype: dict
+        """
+        return self._check_configs
+
+    @property
     def pr_comment_report(self):
         """The configuration of the PR comment report feature.
+
+        Determines what information will be shared on a comment
+        on a pull request.
 
         :return: a dictionary with the existing config options, or the fallback
             default options if none defined
@@ -83,13 +96,46 @@ class Config:
         )
 
     @property
-    def check_configs(self):
-        """A dictionary with the configuration for all checks.
+    def pr_console_report(self):
+        """The configuration of the console report feature.
 
-        :return: a dictionary with CheckConfig objects as values
+        Determines what information will be shared on a report on the console
+        when running on a PR.
+
+        :return: a dictionary with the existing config options, or the fallback
+            default options if none defined
         :rtype: dict
         """
-        return self._check_configs
+        return self.settings.get(
+            'console_report',
+            {
+                'show_empty_sections': True,
+                'show_message': True,
+                'show_details': True,
+                'show_successful': True,
+            },
+        )
+
+    @property
+    def local_console_report(self):
+        """The configuration of the local console report feature.
+
+        Determines what information will be shared on a report on the console
+        when running locally (not on a PR).
+
+        :return: a dictionary with the existing config options, or the fallback
+            default options if none defined
+        :rtype: dict
+        """
+        return self.settings.get(
+            'local_console_report',
+            {
+                'show_empty_sections': False,
+                'show_message': True,
+                'show_details': True,
+                'show_successful': False,
+            },
+        )
 
 
 class ConfigFactory:
@@ -97,7 +143,7 @@ class ConfigFactory:
     configuration for the whole library."""
 
     @staticmethod
-    def create(config_dict):
+    def create(config_dict, include_pr=True):
         """Create a new Config object.
 
         :param dict config_dict: a dictionary with the full configuration
@@ -107,6 +153,17 @@ class ConfigFactory:
         """
         settings = config_dict.get('settings', {})
         checks = config_dict.get('checks', {})
+
+        # If `include_pr` is True (e.g. when running on a local repo),
+        # exclude all PR-only checks
+        from temcheck.checks.checks import PR_TYPES_CHECKS
+
+        if not include_pr:
+            checks = {
+                key: value
+                for key, value in checks.items()
+                if key not in PR_TYPES_CHECKS
+            }
 
         check_configs = {}
         for check_type, config_dict in checks.items():

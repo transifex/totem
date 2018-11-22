@@ -1,18 +1,19 @@
 TemCheck
 --------
 
-TemCheck is a Pull Request Health Check library that checks whether or not pull requests follow a set of certain quality standards.
+TemCheck is a Git Health Check library that checks whether or not certain quality standards are followed on pull requests or local Git repositories.
 
-It was created in order to automate the PR-related checks defined in the [Transifex Engineering Manifesto](https://tem.transifex.com/).
+It was created in order to automate the Git-related checks defined in the [Transifex Engineering Manifesto](https://tem.transifex.com/).
 
 Currently it supports Github pull requests only.
 
 
 # Features
 - Perform multiple checks on a PR level (pull request, commits, etc)
+- Perform multiple checks on local Git repositories, suitable as a pre-push hook
 - Configurable: you can only enable the checks you want, and define the configuration parameters for each check, so you can apply the tool to various repositories with different options
 - Detailed report in the console, makes it easy to spot any issues
-- Ability for a useful summary, shown as a comment created on the pull request, with configurable content (disabled by default)  
+- Ability for a useful summary, shown as a comment created on the pull request with configurable content (disabled by default)  
 
 
 # Installation
@@ -21,30 +22,54 @@ TemCheck can be installed by running `pip install git+ssh://git@github.com/trans
 
 # Usage
 
-## Command line
-TemCheck provides a console command and requires only the URL of the pull request to check. In this case, it uses a default configuration.
+## Running on a PR
+### Command line
+TemCheck provides a console command and requires only the URL of the pull request to check. 
+By default, it will attempt to read the `.temcheck.yml` file on the repo as configuration. If it is not found, it defaults to `./contrib/config/sample.yml` on the temcheck repo.
 
 ```
 temcheck -p https://www.github.com/:owner/:repo/pulls/:number
 ```
 
-NOTE: the default configuration will *not* create a comment on the pull request being checked, so you can test in at will on various public projects. If you use a custom config, make sure you know what you are doing if you are hitting public projects.   
+NOTE: the default configuration will *not* create a comment on the pull request being checked. Therefore, you can test in at will on various public projects. If you use a custom config, make sure you know what you are doing if you are hitting public projects.   
 
 A custom config can be provided and supports a lot of options.
 
 ```
 temcheck -p https://www.github.com/:owner/:repo/pulls/:number -c ./temcheck_config.yml
-```   
+```
 
 The project includes a sample configuration file, which can be found at `./contrib/config/sample.yml`.
 
-## CI
-When running from a CI service, you need to retrieve the pull request URL from the environment variables the services provides. Also, you can set the URL of the CI build page, in which case a link appears on the PR comment that the TemCheck creates.
+### CI
+When running from a CI service, you need to retrieve the pull request URL from the environment variables the service provides. Also, you can set the URL of the CI build page, in which case a link appears on the PR comment that the TemCheck creates.
 
 For example, with CircleCI you need to make the following call:
 ```
 temcheck --pr-url $CIRCLE_PULL_REQUEST --config-file .circleci/temcheck.yml --details-url $CIRCLE_BUILD_URL
 ```
+
+## Running on a local repository
+
+You can call the command without any arguments. In this case it reads the `.temcheck.yml` file on the repo as configuration. If this file does not exist, the tool cannot run.
+```
+temcheck
+```
+
+You can also define a custom config file to use.
+```
+temcheck -c <file>
+```
+
+### Pre-push hook
+
+In order to use it as a pre-push hook, add the following in the `.git/hooks/pre-push` file:
+```
+#!/bin/sh
+temcheck
+```
+
+This way, temcheck will run every time you call `git push`, and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
 
 ## Github authentication
 In order to run TemCheck on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, all you have to do is to add an environment variable with the Github access token:
@@ -86,6 +111,16 @@ settings:
     show_empty_sections: True
     show_message: True
     show_details: True
+  console_report:
+    show_empty_sections: True
+    show_message: True
+    show_details: True
+    show_successful: True
+  local_console_report:
+    show_empty_sections: False
+    show_message: True
+    show_details: True
+    show_successful: False
 checks:
   branch_name:
     pattern: ^[\w\d\-]+$
@@ -126,9 +161,14 @@ checks:
 This is how a report created as a comment on the pull request may look like:
 
 Checking if this PR follows the expected quality standards. Powered by [temcheck](https://www.github.com/transifex/temcheck).
-> Executed 6 quality checks, revealing 2 failures, 1 warnings and 3 successful checks.
 
-**Failures (2)** - *These need to be fixed!*
+failures | warnings | successful
+----------- | ------------- | -------------
+| 0 | 0 | 3
+
+
+
+:bangbang: **Failures (2)** - *These need to be fixed!*
 - **pr_body_includes**
   Required strings in PR body are missing: `"Problem and/or solution"`
 - **commit_message**
@@ -148,12 +188,12 @@ Checking if this PR follows the expected quality standards. Powered by [temcheck
     url: https://github.com/owner/repo/commit/ceb9696937b19ee2cda96c968800596b45280b1e
 
 
-**Warnings (1)** - *Fixing these may not be applicable, please review them case by case*
+:eight_pointed_black_star: **Warnings (1)** - *Fixing these may not be applicable, please review them case by case*
 - **pr_title**
   PR title `"Fix things"` does not match pattern: `"^XX-[0-9]+ .+$"`. 
   Explanation: PR title must start with the Jira ID
 
-**Successful (3)** - *Good job on these!*
+:white_check_mark: **Successful (3)** - *Good job on these!*
 - **branch_name**
 - **pr_body_checklist**
 - **pr_body_excludes**
