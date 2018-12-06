@@ -69,6 +69,8 @@ In order to use it as a pre-push hook, add the following in the `.git/hooks/pre-
 temcheck
 ```
 
+Note: Make sure the file is executable (`chmod +x .git/hooks/pre-push`).
+
 This way, temcheck will run every time you call `git push`, and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
 
 ## Github authentication

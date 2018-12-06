@@ -19,7 +19,13 @@ class CommitsContentProvider(BaseContentProvider):
         of the current branch (max 50)."""
         repo = Repo(os.getcwd())
         branch_name = repo.head.ref.name
-        commits = list(repo.iter_commits(branch_name, max_count=50))
+        last_commit = repo.commit(branch_name)
+        parent_ref = last_commit.parents[0]
+
+        # We only want the commits of the current branch, from the parent
+        # to the tip of the branch, e.g. master...my-feature-branch
+        rev = '{}...{}'.format(parent_ref, branch_name)
+        commits = list(repo.iter_commits(rev, max_count=50))
 
         return {
             'commits': [
