@@ -51,8 +51,59 @@ class BaseContentProvider:
         return self.params['pr_num']
 
 
-class BaseContentProviderFactory:
+class BaseGitContentProviderFactory:
     """A base class for classes that want to create content providers.
+
+    A content provider is responsible for providing content
+    retrieved from Git, either from a local Git repository
+    or a Git service.
+    """
+
+    def __init__(self):
+        self._providers = {}
+        self._register_defaults()
+
+    def register(self, check_type, provider_class):
+        """Register the given provider class for the given id.
+
+        Allows clients to add custom functionality, by providing a custom
+        GithubContentProvider subclass, tied to a custom string id.
+
+        :param str check_type: the type of the check to associate this
+            provider class with
+        :param type provider_class: the class that will be used to create
+            an instance from; needs to be a GithubContentProvider subclass
+        """
+        self._providers[check_type] = provider_class
+
+    def create(self, check):
+        """Return a content provider that can later provide all required content
+        for a certain check to execute its actions.
+
+        :param Check check: the check object to create a content provider for
+        :return: a content provider
+        :rtype: BaseContentProvider
+        """
+        raise NotImplemented()
+
+    def _register_defaults(self):
+        """Register all default checks."""
+        for provider_id, provider_class in self._get_defaults().items():
+            self.register(provider_id, provider_class)
+
+    def _get_defaults(self):
+        """Return a dictionary of default checks.
+
+        Subclasses can provide the actual checks.
+
+        :rtype: dict
+        """
+        return {}
+
+
+class BaseGitServiceContentProviderFactory(BaseGitContentProviderFactory):
+    """A base class for classes that want to create content providers
+    that use a Git service (e.g. Github).
 
     Provides very simple functionality, i.e. storing necessary information
     in the constructor, to be later used to retrieve data from the
@@ -65,6 +116,7 @@ class BaseContentProviderFactory:
         :param str repo_name: the full name of the repository (<account>/<repo>)
         :param int pr_num: the identifier of the pull request
         """
+        super().__init__()
         self.repo_name = repo_name
         self.pr_num = pr_num
 
@@ -78,5 +130,6 @@ class BaseContentProviderFactory:
 
         :param Check check: the check object to create a content provider for
         :return: a content provider
+        :rtype: BaseContentProvider
         """
         raise NotImplemented()

@@ -24,7 +24,7 @@ class CheckSuite:
 
         :param Config config: an object that contains all configuration options,
             including the checks to run and the parameters for each
-        :param BaseContentProviderFactory content_provider_factory: an object that
+        :param BaseGitContentProviderFactory content_provider_factory: an object that
             knows how to create content providers for a specific Git service
         :param CheckFactory check_factory: an object that knows how to create
             Check subclasses for every known configuration type
@@ -40,7 +40,7 @@ class CheckSuite:
         Checks are executed synchronously, one by one.
         This is the main point of the application where the actual magic happens.
         """
-        for check_type, config in self.config._check_configs.items():
+        for check_type, config in self.config.check_configs.items():
             result = self._run_check(config, self._check_factory)
             self.results.add(result)
 
