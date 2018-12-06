@@ -19,7 +19,10 @@ from temcheck.checks.checks import (
     TYPE_PR_BODY_INCLUDES,
     TYPE_PR_TITLE,
 )
-from temcheck.checks.content import BaseContentProvider, BaseContentProviderFactory
+from temcheck.checks.content import (
+    BaseContentProvider,
+    BaseGitServiceContentProviderFactory,
+)
 from temcheck.github import github_service
 from temcheck.reporting.pr import PRCommentReport
 
@@ -47,7 +50,7 @@ class GithubContentProvider(BaseContentProvider):
         return github_service().get_pr(self.repo_name, self.pr_number)
 
 
-class PRContentProvider(GithubContentProvider):
+class GithubPRContentProvider(GithubContentProvider):
     """Retrieves information of a pull request from Github.
 
     Contains all information that is necessary to perform related checks.
@@ -139,11 +142,12 @@ class PRCommitsContentProvider(GithubContentProvider):
         }
 
 
-class ContentProviderFactory(BaseContentProviderFactory):
-    """Responsible for creating the proper content provider for every type of check.
+class GithubContentProviderFactory(BaseGitServiceContentProviderFactory):
+    """Responsible for creating the proper content provider for every type of check,
+    specifically for the Github service.
 
-    This is part of a mechanism for lazy retrieval of content from services
-    like Github. The factory (instantly) creates provider objects that know how to get
+    It's part of a mechanism for lazy retrieval of content from Github.
+    The factory (instantly) creates provider objects that know how to get
     that content, but they don't start fetching it immediately. Anyone
     that gets hold of a provider object can command it to retrieve the content,
     which is an operation that might take time, since it often requires HTTP requests
@@ -152,37 +156,6 @@ class ContentProviderFactory(BaseContentProviderFactory):
     Allows clients to add custom functionality by registering new providers,
     associated with certain configuration types.
     """
-
-    def __init__(self, repo_name, pr_num):
-        super().__init__(repo_name, pr_num)
-        self._providers = {}
-        self._register_defaults()
-
-    def register(self, check_type, provider_class):
-        """Register the given provider class for the given id.
-
-        Allows clients to add custom functionality, by providing a custom
-        GithubContentProvider subclass, tied to a custom string id.
-
-        :param str check_type: the type of the check to associate this
-            provider class with
-        :param type provider_class: the class that will be used to create
-            an instance from; needs to be a GithubContentProvider subclass
-        """
-        self._providers[check_type] = provider_class
-
-    def _register_defaults(self):
-        """Register all default checks."""
-        defaults = {
-            TYPE_BRANCH_NAME: PRContentProvider,
-            TYPE_PR_BODY_CHECKLIST: PRContentProvider,
-            TYPE_PR_TITLE: PRContentProvider,
-            TYPE_PR_BODY_EXCLUDES: PRContentProvider,
-            TYPE_PR_BODY_INCLUDES: PRContentProvider,
-            TYPE_COMMIT_MESSAGE: PRCommitsContentProvider,
-        }
-        for provider_id, provider_class in defaults.items():
-            self.register(provider_id, provider_class)
 
     def create(self, check):
         """Return a content provider that can later provide all required content
@@ -199,3 +172,13 @@ class ContentProviderFactory(BaseContentProviderFactory):
             return None
 
         return cls(**params)
+
+    def _get_defaults(self):
+        return {
+            TYPE_BRANCH_NAME: GithubPRContentProvider,
+            TYPE_PR_BODY_CHECKLIST: GithubPRContentProvider,
+            TYPE_PR_TITLE: GithubPRContentProvider,
+            TYPE_PR_BODY_EXCLUDES: GithubPRContentProvider,
+            TYPE_PR_BODY_INCLUDES: GithubPRContentProvider,
+            TYPE_COMMIT_MESSAGE: PRCommitsContentProvider,
+        }
