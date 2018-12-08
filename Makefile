@@ -1,3 +1,6 @@
+help:
+	cat Makefile && echo '\n'
+
 clean:
 	make clean-pyc
 	make clean-build
@@ -10,3 +13,6 @@ clean-build:
 	rm --force --recursive build/
 	rm --force --recursive dist/
 	rm --force --recursive *.egg-info
+
+tests:
+	    coverage run --source temcheck --omit '*tests*' -m pytest && coverage report -m

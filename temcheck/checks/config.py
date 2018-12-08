@@ -27,7 +27,6 @@ class CheckConfig:
             this is
         :param str failure_level: defines how a failed check should be treated
             (an error would block merging, whereas a warning would not)
-        :param dict options: a dictionary with all configuration options
         """
         self.check_type = check_type
         self.failure_level = failure_level
