@@ -30,7 +30,7 @@ class Check:
         :return: the result of performing the check
         :rtype: CheckResult
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def check_type(self):

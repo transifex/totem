@@ -252,21 +252,6 @@ class CommitMessagesCheck(Check):
         """
         commits = content.get('commits')
 
-        subject_config = self._from_config('subject')
-        if not subject_config:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='Configuration for commit checks should include '
-                'a "subject" key',
-            )
-        body_config = self._from_config('body')
-        if not body_config:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='Configuration for commit checks should include '
-                'a "body" key',
-            )
-
         # Catch exceptions due to invalid format of the content
         # In the future, we could alternatively validate the content via Schema
         try:
@@ -278,10 +263,11 @@ class CommitMessagesCheck(Check):
                     errors['commit_order'] = index + 1
                     failed_items.append(errors)
 
-        except KeyError:
+        except KeyError as e:
             return self._get_error(
                 ERROR_INVALID_CONTENT,
-                message='Content for commit checks has invalid structure',
+                message='Content for commit checks has invalid structure: '
+                'Missing key: {}'.format(e),
             )
 
         if failed_items:

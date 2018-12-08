@@ -33,14 +33,14 @@ class BaseContentProvider:
         :return: a dictionary with all retrieved content
         :rtype: dict
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def create_pr_comment(self, body):
         """Create a comment on a pull request.
 
         :param str body: the body of the comment
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def repo_name(self):
@@ -84,7 +84,7 @@ class BaseGitContentProviderFactory:
         :return: a content provider
         :rtype: BaseContentProvider
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def _register_defaults(self):
         """Register all default checks."""
@@ -132,4 +132,4 @@ class BaseGitServiceContentProviderFactory(BaseGitContentProviderFactory):
         :return: a content provider
         :rtype: BaseContentProvider
         """
-        raise NotImplemented()
+        raise NotImplementedError()

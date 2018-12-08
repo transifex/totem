@@ -1,0 +1,47 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  build:
+    working-directory: ~/transifex/temcheck
+    docker:
+      - image: circleci/python:3.6.1
+    steps:
+      - checkout
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/development.txt" }}
+      - run:
+          name: install dependencies
+          command: |
+            python3 -m venv txenv
+            . txenv/bin/activate
+            pip install -r requirements/development.txt
+      - save_cache:
+          paths:
+            - ./txenv
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/development.txt" }}
+
+      - run:
+          name: run tests
+          command: |
+            . txenv/bin/activate
+            coverage run --source temcheck --omit '*tests*' -m pytest
+            coverage report -m
+            coverage xml
+            mkdir -p /tmp/test-results
+            cp coverage.xml /tmp/test-results/test-results.xml
+      - run:
+          name: upload coverage report
+          command: |
+            . txenv/bin/activate
+            sudo pip install codecov
+            codecov --token=f13bd5bc-6ff2-4efe-8104-3f4617d4dae4
+
+
+workflows:
+  version: 2
+  run_tests:
+    jobs:
+      - build
