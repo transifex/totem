@@ -37,7 +37,7 @@ jobs:
           command: |
             . txenv/bin/activate
             sudo pip install codecov
-            codecov --token=f13bd5bc-6ff2-4efe-8104-3f4617d4dae4
+            codecov --token=9dcb14da-1951-4ff1-a39a-16381af243bc
 
 
 workflows:
