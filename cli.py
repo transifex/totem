@@ -9,7 +9,7 @@ from temcheck.main import LocalTemCheck, PRTemCheck
 from temcheck.reporting.console import Color
 
 
-def run_checks(pr_url, config_file=None, details_url=None):
+def run_checks(pr_url: str, config_file: str=None, details_url: str=None):
     """Run all checks described in `config_file` for the PR on the given URL.
 
     :param str pr_url: the URL of the pull request as retrieved from the CI
@@ -53,7 +53,7 @@ def run_checks(pr_url, config_file=None, details_url=None):
 @click.option('-c', '--config-file', required=False, type=str)
 @click.option('--details-url', required=False, type=str)
 @click.argument('args', nargs=-1)
-def main(pr_url, config_file=None, details_url=None, args=None):
+def main(pr_url: str, config_file: str=None, details_url: str=None, args: list=None):
     """Run all checks described in `config_file`.
 
     If a URL of a pull request is given, it performs all checks on it.

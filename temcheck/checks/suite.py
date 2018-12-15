@@ -1,3 +1,6 @@
+from temcheck.checks.config import CheckConfig, Config
+from temcheck.checks.content import BaseGitContentProviderFactory
+from temcheck.checks.core import CheckFactory
 from temcheck.checks.results import (
     ERROR_GENERIC,
     STATUS_ERROR,
@@ -19,7 +22,7 @@ class CheckSuite:
     All checks run synchronously.
     """
 
-    def __init__(self, config, content_provider_factory, check_factory):
+    def __init__(self, config: Config, content_provider_factory: BaseGitContentProviderFactory, check_factory: CheckFactory):
         """Constructor.
 
         :param Config config: an object that contains all configuration options,
@@ -44,7 +47,7 @@ class CheckSuite:
             result = self._run_check(config, self._check_factory)
             self.results.add(result)
 
-    def _run_check(self, config, factory):
+    def _run_check(self, config: CheckConfig, factory: CheckFactory) -> CheckResult:
         """Execute a check for the given configuration.
 
         :param CheckConfig config: the configuration of the check

@@ -1,6 +1,8 @@
 import re
 
 import pyaml
+from temcheck.checks.results import CheckResult
+from temcheck.checks.suite import CheckSuite
 from temcheck.reporting import StringBuilder
 
 
@@ -10,7 +12,7 @@ class PRCommentReport:
 
     TITLE = '# Pull Request Health Check'
 
-    def __init__(self, suite, details_url=None):
+    def __init__(self, suite: CheckSuite, details_url: str=None):
         """Constructor.
 
         :param CheckSuite suite: the check suite that was executed
@@ -19,7 +21,7 @@ class PRCommentReport:
         self.suite = suite
         self.details_url = details_url
 
-    def get_summary(self):
+    def get_summary(self) -> str:
         """Return a summary of the most important information about the results,
         to be used as a comment on the pull request.
 
@@ -109,7 +111,7 @@ class PRCommentReport:
 
         return builder.render()
 
-    def _format_result(self, result):
+    def _format_result(self, result: CheckResult) -> str:
         """Pretty-format the given result, adding markdown and making it more readable.
 
         :param CheckResult result:
@@ -153,6 +155,6 @@ class PRCommentReport:
         )
 
     @staticmethod
-    def _increase_readability(string):
+    def _increase_readability(string: str) -> str:
         """Enclose any occurrence of "...." inside ``, to make it more readable."""
         return re.sub('("[^\"]+")', '`\g<1>`', string)

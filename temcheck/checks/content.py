@@ -1,4 +1,7 @@
 from functools import lru_cache
+from typing import Dict, Union
+
+from temcheck.checks.checks import Check
 
 
 class BaseContentProvider:
@@ -19,10 +22,10 @@ class BaseContentProvider:
         The caller can specify any number of custom parameters that are necessary
         for retrieving the proper content.
         """
-        self.params = params
+        self.params: Dict[str, Union[str, int]] = params
 
     @lru_cache(maxsize=None)
-    def get_content(self):
+    def get_content(self) -> dict:
         """Return a dictionary with all required content for the given check
         to perform its actions.
 
@@ -35,7 +38,7 @@ class BaseContentProvider:
         """
         raise NotImplementedError()
 
-    def create_pr_comment(self, body):
+    def create_pr_comment(self, body: str) -> dict:
         """Create a comment on a pull request.
 
         :param str body: the body of the comment
@@ -43,12 +46,24 @@ class BaseContentProvider:
         raise NotImplementedError()
 
     @property
-    def repo_name(self):
-        return self.params['repo_name']
+    def repo_name(self) -> Union[str, None]:
+        return self.params.get('repo_name', None)
 
     @property
-    def pr_number(self):
-        return self.params['pr_num']
+    def pr_number(self) -> Union[int, None]:
+        return self.params.get('pr_num', None)
+
+    def delete_previous_pr_comment(self, latest_comment_id: int)-> bool:
+        """Delete the previous temcheck comment on the PR.
+
+        TODO: This was added here temporarily in order to silence type checking
+        TODO: Create a more proper architecture for this
+
+        :param int latest_comment_id: the ID of the comment to leave intact
+        :return: True if the previous comment was deleted, False otherwise
+        :rtype: bool
+        """
+        return False
 
 
 class BaseGitContentProviderFactory:
@@ -63,7 +78,7 @@ class BaseGitContentProviderFactory:
         self._providers = {}
         self._register_defaults()
 
-    def register(self, check_type, provider_class):
+    def register(self, check_type: str, provider_class: type):
         """Register the given provider class for the given id.
 
         Allows clients to add custom functionality, by providing a custom
@@ -76,7 +91,7 @@ class BaseGitContentProviderFactory:
         """
         self._providers[check_type] = provider_class
 
-    def create(self, check):
+    def create(self, check: Check) -> Union[BaseContentProvider, None]:
         """Return a content provider that can later provide all required content
         for a certain check to execute its actions.
 
@@ -91,7 +106,7 @@ class BaseGitContentProviderFactory:
         for provider_id, provider_class in self._get_defaults().items():
             self.register(provider_id, provider_class)
 
-    def _get_defaults(self):
+    def _get_defaults(self) -> dict:
         """Return a dictionary of default checks.
 
         Subclasses can provide the actual checks.
@@ -110,7 +125,7 @@ class BaseGitServiceContentProviderFactory(BaseGitContentProviderFactory):
     corresponding Git service.
     """
 
-    def __init__(self, repo_name, pr_num):
+    def __init__(self, repo_name: str, pr_num: int):
         """Constructor.
 
         :param str repo_name: the full name of the repository (<account>/<repo>)
@@ -120,7 +135,7 @@ class BaseGitServiceContentProviderFactory(BaseGitContentProviderFactory):
         self.repo_name = repo_name
         self.pr_num = pr_num
 
-    def create(self, check):
+    def create(self, check: Check) -> Union[BaseContentProvider, None]:
         """Return a content provider that can later provide all required content
         for a certain check to execute its actions.
 
