@@ -16,7 +16,7 @@ class CheckConfig:
     the branch name and the expected prefix).
     """
 
-    def __init__(self, check_type, failure_level, **options):
+    def __init__(self, check_type: str, failure_level: str, **options):
         """
         Constructor.
 
@@ -40,7 +40,7 @@ class Config:
     other parts of the behaviour of this tool.
     """
 
-    def __init__(self, settings, check_configs):
+    def __init__(self, settings: dict, check_configs: dict):
         """Constructor.
 
         :param dict settings: a dictionary with all generic settings,
@@ -53,7 +53,7 @@ class Config:
         self._check_configs = check_configs
 
     @property
-    def settings(self):
+    def settings(self) -> dict:
         """The generic settings of the tool.
 
         :return: a dictionary with all generic settings, containing a dict
@@ -63,7 +63,7 @@ class Config:
         return self._settings
 
     @property
-    def check_configs(self):
+    def check_configs(self) -> dict:
         """Contains all the configuration for the checks,
         with the check type as the key and a CheckConfig object
         as the value
@@ -74,7 +74,7 @@ class Config:
         return self._check_configs
 
     @property
-    def pr_comment_report(self):
+    def pr_comment_report(self) -> dict:
         """The configuration of the PR comment report feature.
 
         Determines what information will be shared on a comment
@@ -95,7 +95,7 @@ class Config:
         )
 
     @property
-    def pr_console_report(self):
+    def pr_console_report(self) -> dict:
         """The configuration of the console report feature.
 
         Determines what information will be shared on a report on the console
@@ -116,7 +116,7 @@ class Config:
         )
 
     @property
-    def local_console_report(self):
+    def local_console_report(self) -> dict:
         """The configuration of the local console report feature.
 
         Determines what information will be shared on a report on the console
@@ -142,11 +142,13 @@ class ConfigFactory:
     configuration for the whole library."""
 
     @staticmethod
-    def create(config_dict, include_pr=True):
+    def create(config_dict: dict, include_pr: bool=True) -> Config:
         """Create a new Config object.
 
         :param dict config_dict: a dictionary with the full configuration
             of all available settings
+        :param bool include_pr: if False, all checks that can only
+            be applied on PRs will not be included in the config
         :return: the new config
         :rtype: Config
         """
@@ -172,7 +174,7 @@ class ConfigFactory:
         return Config(settings, check_configs)
 
     @staticmethod
-    def _create_check_config(check_type, config_dict):
+    def _create_check_config(check_type: str, config_dict: dict) -> CheckConfig:
         """Create a CheckConfig object with the given type and parameters.
 
         :param str check_type: a string that shows what type of check

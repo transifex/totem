@@ -1,4 +1,10 @@
-from temcheck.checks.config import FAILURE_LEVEL_ERROR, FAILURE_LEVEL_WARNING
+from typing import List
+
+from temcheck.checks.config import (
+    FAILURE_LEVEL_ERROR,
+    FAILURE_LEVEL_WARNING,
+    CheckConfig,
+)
 
 STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed
@@ -19,14 +25,14 @@ ERROR_INVALID_COMMIT_MESSAGE_FORMAT = 'invalid_commit_message_format'
 class CheckResult:
     """Contains the results of a single Check that was performed."""
 
-    def __init__(self, config, status, error_code=None, **details):
+    def __init__(self, config: CheckConfig, status: str, error_code: str=None, **details):
         """Constructor.
 
         :param CheckConfig config: the related configuration with which the
             check was run
         :param str status: the status that shows how the check went,
             one of STATUS_PASS, STATUS_FAIL, STATUS_ERROR
-        :param str error_code: a string that
+        :param str error_code: a string that shows what error occurred
         """
         self.config = config
         self.status = status
@@ -34,25 +40,25 @@ class CheckResult:
         self.details = details
 
     @property
-    def success(self):
+    def success(self) -> bool:
         """True if the check succeeded, False if it failed or didn't finish because
         of an error."""
         return self.status == STATUS_PASS
 
     @property
-    def failure_level(self):
+    def failure_level(self) -> str:
         """Defines how to handle a failed (or erroneous) result.
 
         For example, if it should block merging or just show a warning message.
         """
         return self.config.failure_level
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'CheckResult type={}, status={}, error_code={}, details={}'.format(
             self.config.check_type, self.status, self.error_code, self.details
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
 
@@ -60,10 +66,10 @@ class CheckSuiteResults:
     """Contains the results of all the checks of a check suite that were executed."""
 
     def __init__(self):
-        self._failed = []
-        self._successful = []
+        self._failed: List[CheckResult] = []
+        self._successful: List[CheckResult] = []
 
-    def add(self, result):
+    def add(self, result: CheckResult):
         """Store the given result.
 
         :param CheckResult result: the result to store
@@ -74,17 +80,17 @@ class CheckSuiteResults:
             self._failed.append(result)
 
     @property
-    def successful(self):
+    def successful(self) -> List[CheckResult]:
         """A list of all CheckResult objects that passed the check."""
         return self._successful
 
     @property
-    def failed(self):
+    def failed(self) -> List[CheckResult]:
         """A list of all CheckResult objects that failed the check."""
         return self._failed
 
     @property
-    def warnings(self):
+    def warnings(self) -> List[CheckResult]:
         """A list of all CheckResult objects that failed the check
         and are considered to be non-required (warning level)."""
         return [
@@ -94,7 +100,7 @@ class CheckSuiteResults:
         ]
 
     @property
-    def errors(self):
+    def errors(self) -> List[CheckResult]:
         """A list of all CheckResult objects that failed the check
         and are considered to be required (error level)."""
         return [

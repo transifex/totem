@@ -22,7 +22,9 @@ from temcheck.checks.checks import (
     PRTitleCheck,
 )
 from temcheck.checks.config import ConfigFactory
+from temcheck.checks.content import BaseContentProvider, BaseGitContentProviderFactory
 from temcheck.checks.core import CheckFactory
+from temcheck.checks.results import CheckSuiteResults
 from temcheck.checks.suite import CheckSuite
 from temcheck.git.content import GitContentProviderFactory
 from temcheck.github.content import (
@@ -42,11 +44,11 @@ class BaseTemCheck:
     """
 
     def __init__(self):
-        self._check_factory = CheckFactory()
+        self._check_factory: CheckFactory = CheckFactory()
         self._register_defaults()
-        self._content_provider_factory = None
+        self._content_provider_factory: BaseGitContentProviderFactory = None
 
-    def run(self):
+    def run(self) -> CheckSuiteResults:
         """Run all checks.
 
         Subclasses need to do the following:
@@ -61,11 +63,11 @@ class BaseTemCheck:
         raise NotImplementedError()
 
     @property
-    def check_factory(self):
+    def check_factory(self) -> CheckFactory:
         return self._check_factory
 
     @property
-    def content_provider_factory(self):
+    def content_provider_factory(self) -> BaseGitContentProviderFactory:
         return self._content_provider_factory
 
     def _register_defaults(self):
@@ -81,7 +83,7 @@ class BaseTemCheck:
         for config_type, check_class in defaults.items():
             self.check_factory.register(config_type, check_class)
 
-    def _create_suite(self, config):
+    def _create_suite(self, config) -> CheckSuite:
         """Create a check suite to run all checks defined in the
         given config.
 
@@ -103,7 +105,7 @@ class PRTemCheck(BaseTemCheck):
     Also allows clients to register custom behaviour.
     """
 
-    def __init__(self, config_dict, pr_url, details_url=None):
+    def __init__(self, config_dict: dict, pr_url: str, details_url: str=None):
         """Constructor.
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
@@ -142,7 +144,7 @@ class PRTemCheck(BaseTemCheck):
             self.full_repo_name, self.pr_number
         )
 
-    def run(self):
+    def run(self) -> CheckSuiteResults:
         """Run all registered checks of the suite.
 
         :return: the results of the execution of the tests
@@ -175,7 +177,7 @@ class PRTemCheck(BaseTemCheck):
 
         return suite.results
 
-    def _create_pr_comment_report(self, suite, content_provider):
+    def _create_pr_comment_report(self, suite: CheckSuite, content_provider: BaseContentProvider) -> dict:
         """Create a comment on the PR with a short summary of the results.
 
         :param CheckSuite suite: the suite that was executed
@@ -194,8 +196,9 @@ class PRTemCheck(BaseTemCheck):
 
         except Exception as e:
             print(PRConsoleReport.PRComments.get_creation_error(e))
+            return {}
 
-    def _delete_previous_pr_comment(self, suite, comment_id, content_provider):
+    def _delete_previous_pr_comment(self, suite: CheckSuite, comment_id: int, content_provider: BaseContentProvider) -> bool:
         """Delete the previous temcheck comment of the PR.
 
         Useful if the comments stack up and create clutter, in which case
@@ -222,6 +225,7 @@ class PRTemCheck(BaseTemCheck):
 
         except Exception as e:
             print(console_report.PRComments.get_deletion_error(e))
+            return False
 
 
 class LocalTemCheck(BaseTemCheck):
@@ -232,7 +236,7 @@ class LocalTemCheck(BaseTemCheck):
     Also allows clients to register custom behaviour.
     """
 
-    def __init__(self, config_dict):
+    def __init__(self, config_dict: dict):
         """Constructor.
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
@@ -262,7 +266,7 @@ class LocalTemCheck(BaseTemCheck):
         self._config_dict = config_dict
         self._content_provider_factory = GitContentProviderFactory()
 
-    def run(self):
+    def run(self) -> CheckSuiteResults:
         """Run all registered checks of the suite.
 
         :return: the results of the execution of the tests
