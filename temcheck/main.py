@@ -26,7 +26,10 @@ from temcheck.checks.content import BaseContentProvider, BaseGitContentProviderF
 from temcheck.checks.core import CheckFactory
 from temcheck.checks.results import CheckSuiteResults
 from temcheck.checks.suite import CheckSuite
-from temcheck.git.content import GitContentProviderFactory
+from temcheck.git.content import (
+    GitContentProviderFactory,
+    PreCommitContentProviderFactory,
+)
 from temcheck.github.content import (
     GithubContentProviderFactory,
     GithubPRContentProvider,
@@ -105,7 +108,7 @@ class PRTemCheck(BaseTemCheck):
     Also allows clients to register custom behaviour.
     """
 
-    def __init__(self, config_dict: dict, pr_url: str, details_url: str=None):
+    def __init__(self, config_dict: dict, pr_url: str, details_url: str = None):
         """Constructor.
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
@@ -177,7 +180,9 @@ class PRTemCheck(BaseTemCheck):
 
         return suite.results
 
-    def _create_pr_comment_report(self, suite: CheckSuite, content_provider: BaseContentProvider) -> dict:
+    def _create_pr_comment_report(
+        self, suite: CheckSuite, content_provider: BaseContentProvider
+    ) -> dict:
         """Create a comment on the PR with a short summary of the results.
 
         :param CheckSuite suite: the suite that was executed
@@ -198,7 +203,9 @@ class PRTemCheck(BaseTemCheck):
             print(PRConsoleReport.PRComments.get_creation_error(e))
             return {}
 
-    def _delete_previous_pr_comment(self, suite: CheckSuite, comment_id: int, content_provider: BaseContentProvider) -> bool:
+    def _delete_previous_pr_comment(
+        self, suite: CheckSuite, comment_id: int, content_provider: BaseContentProvider
+    ) -> bool:
         """Delete the previous temcheck comment of the PR.
 
         Useful if the comments stack up and create clutter, in which case
@@ -241,7 +248,7 @@ class LocalTemCheck(BaseTemCheck):
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
         clients to register new functionality on them. This can be done via:
-        >>> check = PRTemCheck(config_dict)
+        >>> check = LocalTemCheck(config_dict)
         >>> check.content_provider_factory.register('new_type', MyProviderClass)
         >>> check.check_factory.register('new_type', MyCheckClass)
 
@@ -265,6 +272,61 @@ class LocalTemCheck(BaseTemCheck):
         super().__init__()
         self._config_dict = config_dict
         self._content_provider_factory = GitContentProviderFactory()
+
+    def run(self) -> CheckSuiteResults:
+        """Run all registered checks of the suite.
+
+        :return: the results of the execution of the tests
+        :rtype: CheckSuiteResults
+        """
+        config = ConfigFactory.create(self._config_dict, include_pr=False)
+        suite = self._create_suite(config)
+        suite.run()
+
+        report = LocalConsoleReport(suite)
+        show_warnings = report.report_details.get('show_warnings', True)
+        if suite.results.errors or (show_warnings and suite.results.warnings):
+            print(report.get_detailed_results(suite.results))
+
+        return suite.results
+
+
+class PreCommitLocalTemCheck(BaseTemCheck):
+    """Knows how to perform a bunch of checks just before a local commit
+    takes place.
+
+    Also allows clients to register custom behaviour.
+    """
+
+    def __init__(self, config_dict: dict):
+        """Constructor.
+
+        Creates instances of ContentProviderFactory and CheckFactory and allows
+        clients to register new functionality on them. This can be done via:
+        >>> check = PreCommitLocalTemCheck(config_dict)
+        >>> check.content_provider_factory.register('new_type', MyProviderClass)
+        >>> check.check_factory.register('new_type', MyCheckClass)
+
+        :param dict config_dict: the full configuration of the suite
+            formatted as follows:
+            {
+              'branch_name': {
+                'pattern': '^TX-[0-9]+\-[\w\d\-]+$',
+                'failure_level': 'warning'
+              },
+              'pr_description_checkboxes': {
+                'failure_level': 'error',
+              },
+              'commit_message': {
+                'title_max_length': 52,
+                'body_max_length': 70,
+                'failure_level': 'error',
+              }
+            }
+        """
+        super().__init__()
+        self._config_dict = config_dict
+        self._content_provider_factory = PreCommitContentProviderFactory()
 
     def run(self) -> CheckSuiteResults:
         """Run all registered checks of the suite.

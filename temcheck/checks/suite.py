@@ -22,7 +22,12 @@ class CheckSuite:
     All checks run synchronously.
     """
 
-    def __init__(self, config: Config, content_provider_factory: BaseGitContentProviderFactory, check_factory: CheckFactory):
+    def __init__(
+        self,
+        config: Config,
+        content_provider_factory: BaseGitContentProviderFactory,
+        check_factory: CheckFactory,
+    ):
         """Constructor.
 
         :param Config config: an object that contains all configuration options,
