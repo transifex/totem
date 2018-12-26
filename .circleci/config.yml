@@ -13,7 +13,7 @@ jobs:
       - restore_cache:
           key: deps1-{{ .Branch }}-{{ checksum "requirements/development.txt" }}
       - run:
-          name: install dependencies
+          name: Install dependencies
           command: |
             python3 -m venv txenv
             . txenv/bin/activate
@@ -24,7 +24,14 @@ jobs:
           key: deps1-{{ .Branch }}-{{ checksum "requirements/development.txt" }}
 
       - run:
-          name: run tests
+          name: Run mypy
+          command: |
+            . txenv/bin/activate
+            pip install mypy
+            mypy temcheck --strict-optional
+
+      - run:
+          name: Run tests
           command: |
             . txenv/bin/activate
             coverage run --source temcheck --omit '*tests*' -m pytest
@@ -33,12 +40,11 @@ jobs:
             mkdir -p /tmp/test-results
             cp coverage.xml /tmp/test-results/test-results.xml
       - run:
-          name: upload coverage report
+          name: Upload coverage report
           command: |
             . txenv/bin/activate
             sudo pip install codecov
             codecov --token=9dcb14da-1951-4ff1-a39a-16381af243bc
-
 
 workflows:
   version: 2
