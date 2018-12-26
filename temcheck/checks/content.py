@@ -47,13 +47,15 @@ class BaseContentProvider:
 
     @property
     def repo_name(self) -> Union[str, None]:
-        return self.params.get('repo_name', None)
+        name = self.params.get('repo_name', None)
+        return str(name) if name else None
 
     @property
     def pr_number(self) -> Union[int, None]:
-        return self.params.get('pr_num', None)
+        num = self.params.get('pr_num', None)
+        return int(num) if num is not None else None
 
-    def delete_previous_pr_comment(self, latest_comment_id: int)-> bool:
+    def delete_previous_pr_comment(self, latest_comment_id: int) -> bool:
         """Delete the previous temcheck comment on the PR.
 
         TODO: This was added here temporarily in order to silence type checking
