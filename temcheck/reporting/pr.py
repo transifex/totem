@@ -12,7 +12,7 @@ class PRCommentReport:
 
     TITLE = '# Pull Request Health Check'
 
-    def __init__(self, suite: CheckSuite, details_url: str=None):
+    def __init__(self, suite: CheckSuite, details_url: str = None):
         """Constructor.
 
         :param CheckSuite suite: the check suite that was executed

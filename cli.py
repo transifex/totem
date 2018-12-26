@@ -5,17 +5,25 @@ import sys
 
 import click
 import yaml
-from temcheck.main import LocalTemCheck, PRTemCheck
+from temcheck.main import LocalTemCheck, PreCommitLocalTemCheck, PRTemCheck
 from temcheck.reporting.console import Color
 
 
-def run_checks(pr_url: str, config_file: str=None, details_url: str=None):
+def run_checks(
+    pr_url: str,
+    config_file: str = None,
+    details_url: str = None,
+    arguments: list = None,
+):
     """Run all checks described in `config_file` for the PR on the given URL.
 
     :param str pr_url: the URL of the pull request as retrieved from the CI
     :param str config_file: the path of the configuration file,
         formatted in YAML, as found in contrib/config/sample.yml
     :param str details_url: the URL to visit for more details about the results
+    :param list arguments: a list of optional arguments; if the list is empty,
+        all commits of the current branch will be checked; otherwise,
+        only the pending commit will be checked (as in a pre-commit fashion)
     """
     if not config_file:
         if os.path.isfile('.temcheck.yml'):
@@ -41,7 +49,10 @@ def run_checks(pr_url: str, config_file: str=None, details_url: str=None):
     if pr_url:
         check = PRTemCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
     else:
-        check = LocalTemCheck(config_dict=config)
+        if not arguments:
+            check = LocalTemCheck(config_dict=config)
+        else:
+            check = PreCommitLocalTemCheck(config_dict=config)
 
     results = check.run()
     if results.errors:
@@ -53,7 +64,9 @@ def run_checks(pr_url: str, config_file: str=None, details_url: str=None):
 @click.option('-c', '--config-file', required=False, type=str)
 @click.option('--details-url', required=False, type=str)
 @click.argument('args', nargs=-1)
-def main(pr_url: str, config_file: str=None, details_url: str=None, args: list=None):
+def main(
+    pr_url: str, config_file: str = None, details_url: str = None, args: list = None
+):
     """Run all checks described in `config_file`.
 
     If a URL of a pull request is given, it performs all checks on it.
@@ -70,4 +83,6 @@ def main(pr_url: str, config_file: str=None, details_url: str=None, args: list=N
     :param str details_url: the URL to visit for more details about the results
     :param list args: necessary for pre-commit support
     """
-    run_checks(pr_url=pr_url, config_file=config_file, details_url=details_url)
+    run_checks(
+        pr_url=pr_url, config_file=config_file, details_url=details_url, arguments=args
+    )

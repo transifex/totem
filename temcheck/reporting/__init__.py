@@ -6,7 +6,7 @@ class StringBuilder:
     def __init__(self):
         self.strings = []
 
-    def add(self, string: str=''):
+    def add(self, string: str = ''):
         """Add a new line."""
         self.strings.append(string)
 

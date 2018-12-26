@@ -85,7 +85,7 @@ class GithubPRContentProvider(GithubContentProvider):
             return {}
         return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
 
-    def delete_previous_pr_comment(self, latest_comment_id: int)-> bool:
+    def delete_previous_pr_comment(self, latest_comment_id: int) -> bool:
         """Delete the previous temcheck comment on the PR.
 
         Only deletes 1 comment. `latest_comment_id` is given

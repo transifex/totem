@@ -142,7 +142,7 @@ class ConfigFactory:
     configuration for the whole library."""
 
     @staticmethod
-    def create(config_dict: dict, include_pr: bool=True) -> Config:
+    def create(config_dict: dict, include_pr: bool = True) -> Config:
         """Create a new Config object.
 
         :param dict config_dict: a dictionary with the full configuration

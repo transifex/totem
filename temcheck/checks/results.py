@@ -25,7 +25,9 @@ ERROR_INVALID_COMMIT_MESSAGE_FORMAT = 'invalid_commit_message_format'
 class CheckResult:
     """Contains the results of a single Check that was performed."""
 
-    def __init__(self, config: CheckConfig, status: str, error_code: str=None, **details):
+    def __init__(
+        self, config: CheckConfig, status: str, error_code: str = None, **details
+    ):
         """Constructor.
 
         :param CheckConfig config: the related configuration with which the
