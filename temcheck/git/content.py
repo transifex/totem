@@ -1,22 +1,55 @@
 import os
+from functools import lru_cache
+from typing import Type, Union
 
 from git import Repo
 from temcheck.checks.checks import TYPE_BRANCH_NAME, TYPE_COMMIT_MESSAGE
 from temcheck.checks.content import BaseContentProvider, BaseGitContentProviderFactory
+from temcheck.checks.core import Check
 
 
 class BranchContentProvider(BaseContentProvider):
-    def get_content(self):
-        """Return a dictionary that contains the current branch name."""
+
+    @lru_cache(maxsize=None)
+    def get_content(self) -> dict:
+        """Return a dictionary that contains the current branch name.
+
+        :return: the current branch name, in a dictionary like:
+            {'branch': <branch_name>}
+        :rtype: dict
+        """
         repo = Repo(os.getcwd())
         branch_name = repo.head.ref.name
         return {'branch': branch_name}
 
 
 class CommitsContentProvider(BaseContentProvider):
-    def get_content(self):
+
+    @lru_cache(maxsize=None)
+    def get_content(self) -> dict:
         """Return a dictionary that contains information about all commits
-        of the current branch (max 50)."""
+        of the current branch (max 50).
+
+        :return: the information in a dictionary format as follows:
+            {
+              'commits': [
+                {
+                  'message': <message>,
+                  'sha': <sha>,
+                  'url': '',
+                  'stats': {
+                    'additions': <total_additions>,
+                    'deletions': <total_deletions>,
+                    'total': <total_lines>,
+                  },
+                },
+                {
+                  ...
+                },
+              ],
+            }
+        :rtype: dict
+        """
         repo = Repo(os.getcwd())
         branch_name = repo.head.ref.name
         last_commit = repo.commit(branch_name)
@@ -59,7 +92,7 @@ class GitContentProviderFactory(BaseGitContentProviderFactory):
     associated with certain configuration types.
     """
 
-    def create(self, check):
+    def create(self, check: Check) -> Union[BaseContentProvider, None]:
         """Return a content provider that can later provide all required content
         for a certain check to execute its actions.
 
@@ -67,13 +100,13 @@ class GitContentProviderFactory(BaseGitContentProviderFactory):
         :return: a content provider
         :rtype: BaseContentProvider
         """
-        cls = self._providers.get(check.check_type, None)
+        cls: Type[BaseContentProvider] = self._providers.get(check.check_type, None)
         if cls is None:
             return None
 
         return cls()
 
-    def _get_defaults(self):
+    def _get_defaults(self) -> dict:
         return {
             TYPE_BRANCH_NAME: BranchContentProvider,
             TYPE_COMMIT_MESSAGE: CommitsContentProvider,

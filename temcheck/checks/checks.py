@@ -1,4 +1,5 @@
 import re
+from typing import List, Set, Union
 
 from temcheck.checks.core import Check
 from temcheck.checks.results import (
@@ -10,6 +11,7 @@ from temcheck.checks.results import (
     ERROR_INVALID_PR_TITLE,
     ERROR_MISSING_PR_BODY_TEXT,
     ERROR_UNFINISHED_CHECKLIST,
+    CheckResult,
 )
 
 TYPE_BRANCH_NAME = 'branch_name'
@@ -32,7 +34,7 @@ PR_TYPES_CHECKS = (
 class BranchNameCheck(Check):
     """Checks whether or not a branch name follows a certain format."""
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if a branch name follows a certain format.
 
         :param dict content: contains parameters with the actual content to check
@@ -65,19 +67,20 @@ class BranchNameCheck(Check):
 
         return self._get_success()
 
-    def _default_config(self, name):
+    def _default_config(self, name: str) -> Union[str, None]:
         if name == 'pattern':
             return '^[\w\d\-]+$'
         elif name == 'pattern_descr':
             return (
                 'Branch name must only include lowercase characters, numbers and dashes'
             )
+        return None
 
 
 class PRTitleCheck(Check):
     """Checks whether or not the title of a PR follows a certain format."""
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if a PR title follows a certain format.
 
         :param dict content: contains parameters with the actual content to check
@@ -107,11 +110,12 @@ class PRTitleCheck(Check):
 
         return self._get_success()
 
-    def _default_config(self, name):
+    def _default_config(self, name: str) -> Union[str, None]:
         if name == 'pattern':
             return '^[A-Z].+$'
         elif name == 'pattern_descr':
             return 'PR title must start with an uppercase character'
+        return None
 
 
 class PRBodyChecklistCheck(Check):
@@ -128,14 +132,14 @@ class PRBodyChecklistCheck(Check):
     It uses markdown syntax.
     """
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if the body of a PR contains unchecked items.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
         :rtype: CheckResult
         """
-        body = content.get('body')
+        body = content.get('body', '')
 
         matches = re.findall('[-*] \[ \]', body)
         if matches:
@@ -157,7 +161,7 @@ class PRBodyIncludesCheck(Check):
     and the result it returns includes all the ones that failed.
     """
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if the body of a PR contains specific text.
 
         :param dict content: contains parameters with the actual content to check
@@ -195,7 +199,7 @@ class PRBodyExcludesCheck(Check):
     and the result it returns includes all the ones that failed.
     """
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if the body of a PR contains specific text.
 
         :param dict content: contains parameters with the actual content to check
@@ -229,7 +233,7 @@ class CommitMessagesCheck(Check):
     # These keys are in each failed commit dict
     DEFAULT_KEYS = ('sha', 'url', 'commit_order')
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Check if the commit messages of a PR are properly formatted.
 
         It checks for the following:
@@ -250,22 +254,7 @@ class CommitMessagesCheck(Check):
         :return: the result of the check that was performed
         :rtype: CheckResult
         """
-        commits = content.get('commits')
-
-        subject_config = self._from_config('subject')
-        if not subject_config:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='Configuration for commit checks should include '
-                'a "subject" key',
-            )
-        body_config = self._from_config('body')
-        if not body_config:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='Configuration for commit checks should include '
-                'a "body" key',
-            )
+        commits = content.get('commits', [])
 
         # Catch exceptions due to invalid format of the content
         # In the future, we could alternatively validate the content via Schema
@@ -273,15 +262,15 @@ class CommitMessagesCheck(Check):
             failed_items = []
             for index, commit in enumerate(commits):
                 errors = self._check_message(commit)
-                success = errors is None
-                if not success:
+                if errors:
                     errors['commit_order'] = index + 1
                     failed_items.append(errors)
 
-        except KeyError:
+        except KeyError as e:
             return self._get_error(
                 ERROR_INVALID_CONTENT,
-                message='Content for commit checks has invalid structure',
+                message='Content for commit checks has invalid structure: '
+                'Missing key: {}'.format(e),
             )
 
         if failed_items:
@@ -289,7 +278,7 @@ class CommitMessagesCheck(Check):
             # Do that by combining all keys from each error and removing the
             # default keys that appear in each message, and removing duplicates
             # by using a set
-            keys = set()
+            keys: Set[str] = set()
             for error in failed_items:
                 keys.update(error.keys())
             for default in CommitMessagesCheck.DEFAULT_KEYS:
@@ -305,7 +294,7 @@ class CommitMessagesCheck(Check):
 
         return self._get_success()
 
-    def _check_message(self, commit):
+    def _check_message(self, commit: dict) -> Union[dict, None]:
         """Check the given commit message against the rules defined in the config
         and return the results.
 
@@ -331,7 +320,7 @@ class CommitMessagesCheck(Check):
         # The body is the rest. If there is no newline in the message,
         # then the body is considered to be empty
         subject = message
-        body_lines = []
+        body_lines: List[str] = []
         if '' in lines:
             separator_index = lines.index('')
             subject = '\n'.join(lines[0:separator_index])
@@ -418,7 +407,7 @@ class CommitMessagesCheck(Check):
 
         return errors
 
-    def _default_config(self, name):
+    def _default_config(self, name: str) -> dict:
         if name == 'subject':
             return {
                 'min_length': 8,
@@ -434,3 +423,4 @@ class CommitMessagesCheck(Check):
                 'max_line_length': 72,
                 'smart_require': {'min_changes': 100, 'min_body_lines': 1},
             }
+        return {}

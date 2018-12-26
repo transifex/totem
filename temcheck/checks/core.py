@@ -1,3 +1,6 @@
+from typing import Type, Union
+
+from temcheck.checks.config import CheckConfig
 from temcheck.checks.results import STATUS_ERROR, STATUS_FAIL, STATUS_PASS, CheckResult
 
 
@@ -14,7 +17,7 @@ class Check:
     together.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: CheckConfig):
         """Constructor.
 
         :param CheckConfig config: the configuration to use when performing the check
@@ -22,7 +25,7 @@ class Check:
         """
         self._config = config
 
-    def run(self, content):
+    def run(self, content: dict) -> CheckResult:
         """Execute the check for the current parameters and return the result.
 
         :param dict content: contains parameters with the actual content to check,
@@ -30,13 +33,13 @@ class Check:
         :return: the result of performing the check
         :rtype: CheckResult
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
-    def check_type(self):
+    def check_type(self) -> str:
         return self._config.check_type
 
-    def _from_config(self, name, default=None):
+    def _from_config(self, name: str, default=None):
         """Return a parameter from the configuration options dictionary.
 
         If the options dictionary does not contain an entry with this name,
@@ -47,7 +50,7 @@ class Check:
         default = default if default is not None else self._default_config(name)
         return self._config.options.get(name, default)
 
-    def _default_config(self, name):
+    def _default_config(self, name: str):
         """Return the default value that corresponds to the given option name.
 
         By default, this value is always `None`. Subclasses can override this
@@ -55,14 +58,14 @@ class Check:
         """
         return None
 
-    def _get_success(self, **details):
+    def _get_success(self, **details) -> CheckResult:
         """Return a successful result.
 
         This means that the check was executed and passed.
         """
         return CheckResult(self._config, STATUS_PASS, **details)
 
-    def _get_failure(self, error_code, message, **details):
+    def _get_failure(self, error_code: str, message: str, **details) -> CheckResult:
         """Return a failed result.
 
         This means that the check was executed and failed."""
@@ -70,7 +73,7 @@ class Check:
             self._config, STATUS_FAIL, error_code=error_code, message=message, **details
         )
 
-    def _get_error(self, error_code, message, **details):
+    def _get_error(self, error_code: str, message: str, **details) -> CheckResult:
         """Return an erroneous result.
 
         This means that the check could not execute due to an error.
@@ -94,7 +97,7 @@ class CheckFactory:
     def __init__(self):
         self._checks = {}
 
-    def register(self, config_type, check_class):
+    def register(self, config_type: str, check_class: type):
         """Register the given check class for the given configuration type.
 
         Allows clients to add custom functionality, by providing a custom
@@ -107,7 +110,7 @@ class CheckFactory:
         """
         self._checks[config_type] = check_class
 
-    def create(self, config):
+    def create(self, config: CheckConfig) -> Union[Check, None]:
         """Create the proper Check subclass based on the given configuration.
 
         :param CheckConfig config: the configuration object to use
@@ -116,7 +119,7 @@ class CheckFactory:
         """
         config_type = config.check_type
 
-        cls = self._checks.get(config_type, None)
+        cls: Type[Check] = self._checks.get(config_type, None)
         if cls is None:
             return None
 

@@ -1,4 +1,6 @@
 -r base.txt
 
+coverage==4.5.1
 ipdb==0.11
 pre-commit==1.10.2
+pytest==3.5.1

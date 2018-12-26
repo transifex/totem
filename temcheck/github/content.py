@@ -10,7 +10,9 @@ the Github functionality.
 """
 
 from functools import lru_cache
+from typing import Type, Union
 
+from github.PullRequest import PullRequest
 from temcheck.checks.checks import (
     TYPE_BRANCH_NAME,
     TYPE_COMMIT_MESSAGE,
@@ -23,6 +25,7 @@ from temcheck.checks.content import (
     BaseContentProvider,
     BaseGitServiceContentProviderFactory,
 )
+from temcheck.checks.core import Check
 from temcheck.github import github_service
 from temcheck.reporting.pr import PRCommentReport
 
@@ -42,7 +45,7 @@ class GithubContentProvider(BaseContentProvider):
         super().__init__(**params)
 
     @lru_cache(maxsize=None)
-    def get_pr(self):
+    def get_pr(self) -> PullRequest:
         """Return the pull request object.
 
         :rtype: github.PullRequest.PullRequest
@@ -64,21 +67,25 @@ class GithubPRContentProvider(GithubContentProvider):
     """
 
     @lru_cache(maxsize=None)
-    def get_content(self):
+    def get_content(self) -> dict:
         """Return a dictionary that contains various information about the PR."""
         pr = self.get_pr()
         return {'branch': pr.head.ref, 'title': pr.title, 'body': pr.body}
 
-    def create_pr_comment(self, body):
+    def create_pr_comment(self, body: str) -> dict:
         """Create a comment on a pull request.
 
         :param str body: the body of the comment
         :return: a dictionary with information about the created comment
         :rtype: dict
         """
+        if self.repo_name is None:
+            return {}
+        if self.pr_number is None:
+            return {}
         return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
 
-    def delete_previous_pr_comment(self, latest_comment_id):
+    def delete_previous_pr_comment(self, latest_comment_id: int)-> bool:
         """Delete the previous temcheck comment on the PR.
 
         Only deletes 1 comment. `latest_comment_id` is given
@@ -88,6 +95,11 @@ class GithubPRContentProvider(GithubContentProvider):
         :return: True if the previous comment was deleted, False otherwise
         :rtype: bool
         """
+        if self.repo_name is None:
+            return False
+        if self.pr_number is None:
+            return False
+
         comments = github_service().get_pr_comments(self.repo_name, self.pr_number)
         comments = [
             x
@@ -121,7 +133,7 @@ class PRCommitsContentProvider(GithubContentProvider):
     """
 
     @lru_cache(maxsize=None)
-    def get_content(self):
+    def get_content(self) -> dict:
         """Return a dictionary that contains various information about the commits."""
         commits = self.get_pr().get_commits()
 
@@ -157,7 +169,7 @@ class GithubContentProviderFactory(BaseGitServiceContentProviderFactory):
     associated with certain configuration types.
     """
 
-    def create(self, check):
+    def create(self, check: Check) -> Union[BaseContentProvider, None]:
         """Return a content provider that can later provide all required content
         for a certain check to execute its actions.
 
@@ -167,13 +179,13 @@ class GithubContentProviderFactory(BaseGitServiceContentProviderFactory):
         """
         params = {'repo_name': self.repo_name, 'pr_num': self.pr_num}
 
-        cls = self._providers.get(check.check_type, None)
+        cls: Type[BaseContentProvider] = self._providers.get(check.check_type, None)
         if cls is None:
             return None
 
         return cls(**params)
 
-    def _get_defaults(self):
+    def _get_defaults(self) -> dict:
         return {
             TYPE_BRANCH_NAME: GithubPRContentProvider,
             TYPE_PR_BODY_CHECKLIST: GithubPRContentProvider,

@@ -1,7 +1,9 @@
 """Includes functionality for writing output on the console."""
 
 import pyaml
-from temcheck.checks.results import STATUS_FAIL
+from temcheck.checks.config import Config
+from temcheck.checks.results import STATUS_FAIL, CheckResult, CheckSuiteResults
+from temcheck.checks.suite import CheckSuite
 from temcheck.reporting import StringBuilder
 
 
@@ -17,7 +19,7 @@ class Color:
     END = '\033[0m'
 
     @staticmethod
-    def format(string):
+    def format(string: str) -> str:
         """Format the given string, adding color support."""
         return (
             string.replace('[check]', Color.CHECK_ITEM)
@@ -31,7 +33,7 @@ class Color:
         )
 
     @staticmethod
-    def print(string):
+    def print(string: str):
         """Print to the console with color support."""
         print(Color.format(string))
 
@@ -44,7 +46,7 @@ class BaseConsoleReport:
     in order to return the proper configuration of the report.
     """
 
-    def __init__(self, suite):
+    def __init__(self, suite: CheckSuite):
         """Constructor.
 
         :param CheckSuite suite: the check suite that was executed
@@ -52,12 +54,12 @@ class BaseConsoleReport:
         self.suite = suite
 
     @property
-    def report_details(self):
+    def report_details(self) -> dict:
         # Subclasses need to override this, in order to return the proper
         # configuration, from the corresponding property of the `Config` class
         raise NotImplementedError()
 
-    def get_pre_run_report(self, config, pr_url):
+    def get_pre_run_report(self, config: Config, pr_url: str) -> str:
         """Print a message before running the checks.
 
         :param Config config: the configuration that will be used
@@ -78,7 +80,7 @@ class BaseConsoleReport:
         builder.add()
         return builder.render()
 
-    def get_detailed_results(self, results):
+    def get_detailed_results(self, results: CheckSuiteResults) -> str:
         """Return a string with all results in detail.
 
         :param CheckSuiteResults results: the object that contains the results
@@ -127,7 +129,7 @@ class BaseConsoleReport:
 
         return builder.render()
 
-    def get_summary(self, results):
+    def get_summary(self, results: CheckSuiteResults) -> str:
         """Get a short summary of all results.
 
         :param CheckSuiteResults results: the object that contains the results
@@ -189,46 +191,46 @@ class BaseConsoleReport:
         """Provides messages to print to the console when working on PR comments."""
 
         @staticmethod
-        def get_creation_pre_run():
+        def get_creation_pre_run() -> str:
             return 'Attempting to create new comment on pull request...'
 
         @staticmethod
-        def get_creation_error(exception):
+        def get_creation_error(exception: Exception) -> str:
             return Color.format(
                 '[error]Error while creating comment:[end]\n'
                 '[fail]{}[end]\n'.format(exception)
             )
 
         @staticmethod
-        def get_creation_success(comment_dict):
+        def get_creation_success(comment_dict: dict) -> str:
             return Color.format(
                 '[success]Pull request comment successfully created '
                 'at: [end]{}'.format(comment_dict['html_url'])
             )
 
         @staticmethod
-        def get_deletion_pre_run():
+        def get_deletion_pre_run() -> str:
             return 'Attempting to delete previous temcheck comment on pull request...'
 
         @staticmethod
-        def get_deletion_error(exception):
+        def get_deletion_error(exception: Exception) -> str:
             return Color.format(
                 '[error]Error while deleting comment:[end]\n'
                 '[fail]{}[end]\n'.format(exception)
             )
 
         @staticmethod
-        def get_deletion_success():
+        def get_deletion_success() -> str:
             return Color.format(
                 '[success]Successfully deleted previous comment on pull request[end]'
             )
 
         @staticmethod
-        def get_deletion_failure():
+        def get_deletion_failure() -> str:
             return Color.format('[success]No previous comment found to delete[end]')
 
     @staticmethod
-    def _format_result(result):
+    def _format_result(result: CheckResult) -> str:
         """Pretty-format the given result, adding colors and making it more readable.
 
         :param CheckResult result:
@@ -275,7 +277,7 @@ class PRConsoleReport(BaseConsoleReport):
     on a pull request."""
 
     @property
-    def report_details(self):
+    def report_details(self) -> dict:
         return self.suite.config.pr_console_report
 
 
@@ -284,5 +286,5 @@ class LocalConsoleReport(BaseConsoleReport):
     on a local Git repository."""
 
     @property
-    def report_details(self):
+    def report_details(self) -> dict:
         return self.suite.config.local_console_report

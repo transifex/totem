@@ -1,4 +1,7 @@
-def parse_pr_url(url):
+from typing import Tuple
+
+
+def parse_pr_url(url: str) -> Tuple[str, int]:
     """Parse the given pull request URL and return its information.
 
     :param str url: the PR URL from Github, formatted as:
