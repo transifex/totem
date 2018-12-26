@@ -9,7 +9,6 @@ from temcheck.checks.core import Check
 
 
 class BranchContentProvider(BaseContentProvider):
-
     @lru_cache(maxsize=None)
     def get_content(self) -> dict:
         """Return a dictionary that contains the current branch name.
@@ -24,7 +23,6 @@ class BranchContentProvider(BaseContentProvider):
 
 
 class CommitsContentProvider(BaseContentProvider):
-
     @lru_cache(maxsize=None)
     def get_content(self) -> dict:
         """Return a dictionary that contains information about all commits
@@ -58,7 +56,7 @@ class CommitsContentProvider(BaseContentProvider):
         # We only want the commits of the current branch, from the parent
         # to the tip of the branch, e.g. master...my-feature-branch
         rev = '{}...{}'.format(parent_ref, branch_name)
-        commits = list(repo.iter_commits(rev, max_count=50))
+        commits = list(repo.iter_commits(rev, max_count=50, no_merges=True))
 
         return {
             'commits': [
