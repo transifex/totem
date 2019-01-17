@@ -1,9 +1,28 @@
 # Python CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2
 jobs:
+  temcheck:
+    docker:
+    - image: python:alpine
+      environment:
+    steps:
+    - checkout
+    - add_ssh_keys:
+        fingerprint:
+          # a public Deploy key of the current repository
+          "8e:61:1b:5d:a2:03:e7:56:3f:a5:f0:37:c8:d8:cc:c5"
+    - run:
+        name: Install git/openssh-client and add github to the list of known hosts
+        command: apk add git openssh-client && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
+    - run:
+        name: Install temcheck
+        command: pip install git+ssh://git@github.com/transifex/temcheck.git@devel
+    - run:
+        name: Run temcheck
+        command: temcheck --pr-url $CIRCLE_PULL_REQUEST --config-file .temcheck.yml --details-url $CIRCLE_BUILD_URL
+
   build:
     working-directory: ~/transifex/temcheck
     docker:
@@ -51,3 +70,6 @@ workflows:
   run_tests:
     jobs:
       - build
+  temcheck:
+    jobs:
+      - temcheck
