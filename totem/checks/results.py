@@ -1,10 +1,6 @@
 from typing import List
 
-from temcheck.checks.config import (
-    FAILURE_LEVEL_ERROR,
-    FAILURE_LEVEL_WARNING,
-    CheckConfig,
-)
+from totem.checks.config import FAILURE_LEVEL_ERROR, FAILURE_LEVEL_WARNING, CheckConfig
 
 STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed

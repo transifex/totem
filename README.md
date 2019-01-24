@@ -1,92 +1,31 @@
-TemCheck
---------
+Totem
+-----
 
-TemCheck is a Git Health Check library that checks whether or not certain quality standards are followed on pull requests or local Git repositories.
+Totem is a Health Check library that checks whether or not certain quality standards are followed on Pull Requests or local Git repositories.
 
-It was created in order to automate the Git-related checks defined in the [Transifex Engineering Manifesto](https://tem.transifex.com/).
+It is inspired by the [Transifex Engineering Manifesto (TEM)](https://tem.transifex.com/), a document that defines the Quality Standards used in Transifex. Totem was created as an automated way to ensure high quality in Git-related guidelines described in the TEM. 
 
-Currently it supports Github pull requests only.
+Currently it supports Github Pull Requests only.
 
 
 # Features
-- Perform multiple checks on a PR level (pull request, commits, etc)
-- Perform multiple checks on local Git repositories, suitable as a pre-push hook
-- Configurable: you can only enable the checks you want, and define the configuration parameters for each check, so you can apply the tool to various repositories with different options
-- Detailed report in the console, makes it easy to spot any issues
-- Ability for a useful summary, shown as a comment created on the pull request with configurable content (disabled by default)  
-
-
-# Installation
-TemCheck can be installed by running `pip install git+ssh://git@github.com/transifex/temcheck.git@master`. It requires Python 3.6.0+.
-
-
-# Usage
-
-## Running on a PR
-### Command line
-TemCheck provides a console command and requires only the URL of the pull request to check. 
-By default, it will attempt to read the `.temcheck.yml` file on the repo as configuration. If it is not found, it defaults to `./contrib/config/sample.yml` on the temcheck repo.
-
-```
-temcheck -p https://www.github.com/:owner/:repo/pulls/:number
-```
-
-NOTE: the default configuration will *not* create a comment on the pull request being checked. Therefore, you can test in at will on various public projects. If you use a custom config, make sure you know what you are doing if you are hitting public projects.   
-
-A custom config can be provided and supports a lot of options.
-
-```
-temcheck -p https://www.github.com/:owner/:repo/pulls/:number -c ./temcheck_config.yml
-```
-
-The project includes a sample configuration file, which can be found at `./contrib/config/sample.yml`.
-
-### CI
-When running from a CI service, you need to retrieve the pull request URL from the environment variables the service provides. Also, you can set the URL of the CI build page, in which case a link appears on the PR comment that the TemCheck creates.
-
-For example, with CircleCI you need to make the following call:
-```
-temcheck --pr-url $CIRCLE_PULL_REQUEST --config-file .circleci/temcheck.yml --details-url $CIRCLE_BUILD_URL
-```
-
-## Running on a local repository
-
-You can call the command without any arguments. In this case it reads the `.temcheck.yml` file on the repo as configuration. If this file does not exist, the tool cannot run.
-```
-temcheck
-```
-
-You can also define a custom config file to use.
-```
-temcheck -c <file>
-```
-
-### Pre-push hook
-
-In order to use it as a pre-push hook, add the following in the `.git/hooks/pre-push` file:
-```
-#!/bin/sh
-temcheck
-```
-
-Note: Make sure the file is executable (`chmod +x .git/hooks/pre-push`).
-
-This way, temcheck will run every time you call `git push`, and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
-
-## Github authentication
-In order to run TemCheck on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, all you have to do is to add an environment variable with the Github access token:
-`GITHUB_ACCESS_TOKEN='<my_super_secret_token>`
+- Multiple quality checks on a Pull Request
+- Multiple quality checks on local Git repositories 
+- Comes with pre-commit support, and can also be added as a pre-push Git hook
+- Configurable: you can only enable the checks you want, and define the configuration parameters for each check, so you can apply the tool to various repositories with different options on each
+- Detailed report in the console, makes it easy to spot issues
+- Ability for a useful summary shown as a comment created on the Pull Request with configurable content (disabled by default)  
 
 
 # Checks
 
-TemCheck supports the following checks:
+Totem supports the following checks:
 
 - **branch_name**: the name of the branch must follow a certain regex pattern
-- **pr_title**: the title of the pull request must follow a certain regex pattern
-- **pr_body_checklist**: the body of the pull request must not contain any unfinished checklist item
-- **pr_body_excludes**: the body of the pull request must not contain certain strings
-- **pr_body_includes**: the body of the pull request must contain certain strings
+- **pr_title**: the title of the Pull Request must follow a certain regex pattern
+- **pr_body_checklist**: the body of the Pull Request must not contain any unfinished checklist item
+- **pr_body_excludes**: the body of the Pull Request must not contain certain strings
+- **pr_body_includes**: the body of the Pull Request must contain certain strings
 - **commit_message**: the message of each commit must follow these guidelines:
   * subject:
     * has a minimum and maximum allowed length
@@ -95,12 +34,71 @@ TemCheck supports the following checks:
     * if there is a body, each line has a maximum allowed length
     * if the commit has a lot of changes, a body must be present and must have a minimum number of lines
 
-With a custom configuration, you can selected which checks will be executed. All of the checks have at least a certain level of configuration.  
+With a custom configuration, you can define which checks will be executed. All of the checks have at least a certain level of configuration.  
 
 ## Failure level
-If a check is executed but fails to pass, it can either provide a failed status check or simply print out a warning. The former can be used in order to prevent a pull request from being merged until all TemCheck checks are fixed. 
+If a check is executed but fails to pass, it can either provide a failed status check (exit status = 1) or simply print out a warning.
+The former can be used in order to prevent a Pull Request from being merged, a local commit to be completed, or local changes to be pushed to the remote, until all Totem checks are fixed.
+The latter is mainly used as a sign that something might not be right, and can be useful when comitting in or pushing from a local repo, or when reviewing a Pull Request. The warning level is necessary because in some repos a rule may not be always applicable, so it should be judged on a case-by-case basis.  
 
-The latter is mainly used as a heads up for reviewers of the PR and is necessary because in some projects a rule may not be always applicable.  
+
+# Installation & Usage
+Totem can be installed by running `pip install git+ssh://git@github.com/transifex/totem.git@master` (soon to be on PyPi). It requires Python 3.6.0+.
+
+## Running on a PR
+### Command line
+Totem provides a console command and requires only the URL of the pull request to check. 
+By default, it will attempt to read the `.totem.yml` file on the repo as configuration. If it is not found, it defaults to `./contrib/config/sample.yml` on the Totem repo.
+
+```
+totem -p https://www.github.com/:owner/:repo/pulls/:number
+```
+
+NOTE: the default configuration will *not* create a comment on the Pull Request being checked. If you use a custom config, you can enable the comment feature.   
+
+A custom config can be provided and supports a lot of options.
+
+```
+totem -p https://www.github.com/:owner/:repo/pulls/:number -c ./totem_config.yml
+```
+
+The project includes a sample configuration file, which can be found at `./contrib/config/sample.yml`.
+
+### CI
+When running from a CI service, you need to retrieve the pull request URL from the environment variables the service provides. Also, you can set the URL of the CI build page, in which case a link appears on the PR comment that the Totem creates.
+
+For example, with CircleCI you need to make the following call:
+```
+totem --pr-url $CIRCLE_PULL_REQUEST --config-file .totem.yml --details-url $CIRCLE_BUILD_URL
+```
+
+## Running on a local repository
+
+You can call the command without any arguments. In this case it reads the `.totem.yml` file on the repo as configuration. If this file does not exist, the tool cannot run.
+```
+totem
+```
+
+You can also define a custom config file to use.
+```
+totem -c <file>
+```
+
+### Pre-push hook
+
+In order to use it as a pre-push hook, add the following in the `.git/hooks/pre-push` file:
+```
+#!/bin/sh
+totem
+```
+
+Note: Make sure the file is executable (`chmod +x .git/hooks/pre-push`).
+
+This way, totem will run every time you call `git push`, and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
+
+## Github authentication
+In order to run Totem on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, all you have to do is to add an environment variable with the Github access token:
+`GITHUB_ACCESS_TOKEN=<my_super_secret_token>`
 
 
 # Configuration
@@ -162,7 +160,7 @@ checks:
 # Sample report
 This is how a report created as a comment on the pull request may look like:
 
-Checking if this PR follows the expected quality standards. Powered by [temcheck](https://www.github.com/transifex/temcheck).
+Checking if this PR follows the expected quality standards. Powered by [totem](https://www.github.com/transifex/totem).
 
 failures | warnings | successful
 ----------- | ------------- | -------------

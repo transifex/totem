@@ -1,9 +1,9 @@
 import re
 
 import pyaml
-from temcheck.checks.results import CheckResult
-from temcheck.checks.suite import CheckSuite
-from temcheck.reporting import StringBuilder
+from totem.checks.results import CheckResult
+from totem.checks.suite import CheckSuite
+from totem.reporting import StringBuilder
 
 
 class PRCommentReport:
@@ -37,7 +37,7 @@ class PRCommentReport:
         builder.add(PRCommentReport.TITLE)
         builder.add(
             'Checking if this PR follows the expected quality standards. '
-            'Powered by [temcheck](https://www.github.com/transifex/temcheck).\n'
+            'Powered by [totem](https://www.github.com/transifex/totem).\n'
         )
 
         comment_settings = self.suite.config.pr_comment_report

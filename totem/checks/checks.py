@@ -1,8 +1,8 @@
 import re
 from typing import List, Set, Union
 
-from temcheck.checks.core import Check
-from temcheck.checks.results import (
+from totem.checks.core import Check
+from totem.checks.results import (
     ERROR_FORBIDDEN_PR_BODY_TEXT,
     ERROR_INVALID_BRANCH_NAME,
     ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
@@ -122,7 +122,7 @@ class PRBodyChecklistCheck(Check):
     """Checks whether or not there are unchecked checklist items in the body
     of a pull request.
 
-    Many TEM templates include a checklist that the reviewer has to complete
+    Many Pull Request templates include a checklist that the reviewer has to complete
     before the PR can be merged. Also, some developers use checklists as a TODO
     before merging a PR.
 

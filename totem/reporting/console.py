@@ -1,10 +1,10 @@
 """Includes functionality for writing output on the console."""
 
 import pyaml
-from temcheck.checks.config import Config
-from temcheck.checks.results import STATUS_FAIL, CheckResult, CheckSuiteResults
-from temcheck.checks.suite import CheckSuite
-from temcheck.reporting import StringBuilder
+from totem.checks.config import Config
+from totem.checks.results import STATUS_FAIL, CheckResult, CheckSuiteResults
+from totem.checks.suite import CheckSuite
+from totem.reporting import StringBuilder
 
 
 class Color:
@@ -69,7 +69,8 @@ class BaseConsoleReport:
         builder = StringBuilder()
         builder.add()
         builder.add(
-            'About to check if the following PR follows the TEM '
+            'About to check if the following PR follows the expected '
+            'Quality Standards. Inspired by the Transifex Engineering Manifesto '
             '(https://tem.transifex.com/)'
         )
         builder.add('PR: {}'.format(pr_url))
@@ -210,7 +211,7 @@ class BaseConsoleReport:
 
         @staticmethod
         def get_deletion_pre_run() -> str:
-            return 'Attempting to delete previous temcheck comment on pull request...'
+            return 'Attempting to delete previous totem comment on pull request...'
 
         @staticmethod
         def get_deletion_error(exception: Exception) -> str:

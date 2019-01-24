@@ -7,7 +7,7 @@ If more Git services need to be supported in the future (other than Github),
 this needs to be refactored.
 """
 
-from temcheck.checks.checks import (
+from totem.checks.checks import (
     TYPE_BRANCH_NAME,
     TYPE_COMMIT_MESSAGE,
     TYPE_PR_BODY_CHECKLIST,
@@ -21,25 +21,19 @@ from temcheck.checks.checks import (
     PRBodyIncludesCheck,
     PRTitleCheck,
 )
-from temcheck.checks.config import ConfigFactory
-from temcheck.checks.content import BaseContentProvider, BaseGitContentProviderFactory
-from temcheck.checks.core import CheckFactory
-from temcheck.checks.results import CheckSuiteResults
-from temcheck.checks.suite import CheckSuite
-from temcheck.git.content import (
-    GitContentProviderFactory,
-    PreCommitContentProviderFactory,
-)
-from temcheck.github.content import (
-    GithubContentProviderFactory,
-    GithubPRContentProvider,
-)
-from temcheck.github.utils import parse_pr_url
-from temcheck.reporting.console import LocalConsoleReport, PRConsoleReport
-from temcheck.reporting.pr import PRCommentReport
+from totem.checks.config import ConfigFactory
+from totem.checks.content import BaseContentProvider, BaseGitContentProviderFactory
+from totem.checks.core import CheckFactory
+from totem.checks.results import CheckSuiteResults
+from totem.checks.suite import CheckSuite
+from totem.git.content import GitContentProviderFactory, PreCommitContentProviderFactory
+from totem.github.content import GithubContentProviderFactory, GithubPRContentProvider
+from totem.github.utils import parse_pr_url
+from totem.reporting.console import LocalConsoleReport, PRConsoleReport
+from totem.reporting.pr import PRCommentReport
 
 
-class BaseTemCheck:
+class BaseCheck:
     """This is the base class that performs a bunch of checks.
 
     Provides basic convenience functionality that subclasses
@@ -101,7 +95,7 @@ class BaseTemCheck:
         )
 
 
-class PRTemCheck(BaseTemCheck):
+class PRCheck(BaseCheck):
     """The main class that knows how to perform a bunch of checks
     on a pull request.
 
@@ -113,7 +107,7 @@ class PRTemCheck(BaseTemCheck):
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
         clients to register new functionality on them. This can be done via:
-        >>> check = PRTemCheck({}, '')
+        >>> check = PRCheck({}, '')
         >>> check.content_provider_factory.register('new_type', MyProviderClass)
         >>> check.check_factory.register('new_type', MyCheckClass)
 
@@ -206,7 +200,7 @@ class PRTemCheck(BaseTemCheck):
     def _delete_previous_pr_comment(
         self, suite: CheckSuite, comment_id: int, content_provider: BaseContentProvider
     ) -> bool:
-        """Delete the previous temcheck comment of the PR.
+        """Delete the previous totem comment of the PR.
 
         Useful if the comments stack up and create clutter, in which case
         only the last comment will be kept.
@@ -235,7 +229,7 @@ class PRTemCheck(BaseTemCheck):
             return False
 
 
-class LocalTemCheck(BaseTemCheck):
+class LocalCheck(BaseCheck):
     """The main class that knows how to perform a bunch of checks
     on a local Git branch.
 
@@ -248,7 +242,7 @@ class LocalTemCheck(BaseTemCheck):
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
         clients to register new functionality on them. This can be done via:
-        >>> check = LocalTemCheck(config_dict)
+        >>> check = LocalCheck(config_dict)
         >>> check.content_provider_factory.register('new_type', MyProviderClass)
         >>> check.check_factory.register('new_type', MyCheckClass)
 
@@ -291,7 +285,7 @@ class LocalTemCheck(BaseTemCheck):
         return suite.results
 
 
-class PreCommitLocalTemCheck(BaseTemCheck):
+class PreCommitLocalCheck(BaseCheck):
     """Knows how to perform a bunch of checks just before a local commit
     takes place.
 
@@ -303,7 +297,7 @@ class PreCommitLocalTemCheck(BaseTemCheck):
 
         Creates instances of ContentProviderFactory and CheckFactory and allows
         clients to register new functionality on them. This can be done via:
-        >>> check = PreCommitLocalTemCheck(config_dict)
+        >>> check = PreCommitLocalCheck(config_dict)
         >>> check.content_provider_factory.register('new_type', MyProviderClass)
         >>> check.check_factory.register('new_type', MyCheckClass)
 

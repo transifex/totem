@@ -1,5 +1,5 @@
-from temcheck.checks.checks import PR_TYPES_CHECKS
-from temcheck.checks.config import Config, ConfigFactory
+from totem.checks.checks import PR_TYPES_CHECKS
+from totem.checks.config import Config, ConfigFactory
 
 
 class TestConfig:
