@@ -1,12 +1,16 @@
 from setuptools import find_packages, setup
 
+import versioneer
+
 setup(
     author='Transifex Devs',
     author_email='info@transifex.com',
-    description='Software to verify that PRs and commits follow '
-    'expected Quality Standards',
+    description=(
+        'Software to verify that PRs and commits follow expected Quality Standards'
+    ),
     name='totem',
-    version='0.2',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     packages=find_packages(),
     install_requires=[
         'Click',
@@ -15,8 +19,5 @@ setup(
         'gitpython==2.1.11',
     ],
     py_modules=['cli'],
-    entry_points='''
-         [console_scripts]
-         totem=cli:main
-      ''',
+    entry_points={'console_scripts': ['totem=cli:main']},
 )
