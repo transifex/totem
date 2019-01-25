@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Dict, Union
 
-from temcheck.checks.checks import Check
+from totem.checks.checks import Check
 
 
 class BaseContentProvider:
@@ -56,7 +56,7 @@ class BaseContentProvider:
         return int(num) if num is not None else None
 
     def delete_previous_pr_comment(self, latest_comment_id: int) -> bool:
-        """Delete the previous temcheck comment on the PR.
+        """Delete the previous totem comment on the PR.
 
         TODO: This was added here temporarily in order to silence type checking
         TODO: Create a more proper architecture for this

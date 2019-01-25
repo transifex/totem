@@ -3,9 +3,9 @@ from setuptools import find_packages, setup
 setup(
     author='Transifex Devs',
     author_email='info@transifex.com',
-    description='Software to verify that GitHub PRs are compliant with the TEM '
-    '(http://tem.transifex.com)',
-    name='temcheck',
+    description='Software to verify that PRs and commits follow '
+    'expected Quality Standards',
+    name='totem',
     version='0.2',
     packages=find_packages(),
     install_requires=[
@@ -17,6 +17,6 @@ setup(
     py_modules=['cli'],
     entry_points='''
          [console_scripts]
-         temcheck=cli:main
+         totem=cli:main
       ''',
 )

@@ -1,5 +1,5 @@
 import pytest
-from temcheck.checks.checks import (
+from totem.checks.checks import (
     BranchNameCheck,
     CommitMessagesCheck,
     PRBodyChecklistCheck,
@@ -7,8 +7,8 @@ from temcheck.checks.checks import (
     PRBodyIncludesCheck,
     PRTitleCheck,
 )
-from temcheck.checks.config import CheckConfig
-from temcheck.checks.results import (
+from totem.checks.config import CheckConfig
+from totem.checks.results import (
     ERROR_FORBIDDEN_PR_BODY_TEXT,
     ERROR_INVALID_BRANCH_NAME,
     ERROR_INVALID_CONFIG,

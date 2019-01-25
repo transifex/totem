@@ -3,7 +3,7 @@
 # Check https://circleci.com/docs/2.0/language-python/ for more details
 version: 2
 jobs:
-  temcheck:
+  totem:
     docker:
     - image: python:alpine
       environment:
@@ -17,14 +17,14 @@ jobs:
         name: Install git/openssh-client and add github to the list of known hosts
         command: apk add git openssh-client && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
     - run:
-        name: Install temcheck
-        command: pip install git+ssh://git@github.com/transifex/temcheck.git@devel
+        name: Install totem
+        command: pip install git+ssh://git@github.com/transifex/totem.git@devel
     - run:
-        name: Run temcheck
-        command: temcheck --pr-url $CIRCLE_PULL_REQUEST --config-file .temcheck.yml --details-url $CIRCLE_BUILD_URL
+        name: Run totem
+        command: totem --pr-url $CIRCLE_PULL_REQUEST --config-file .totem.yml --details-url $CIRCLE_BUILD_URL
 
   build:
-    working-directory: ~/transifex/temcheck
+    working-directory: ~/transifex/totem
     docker:
       - image: circleci/python:3.6.1
     steps:
@@ -47,13 +47,13 @@ jobs:
           command: |
             . txenv/bin/activate
             pip install mypy
-            mypy temcheck --strict-optional
+            mypy totem --strict-optional
 
       - run:
           name: Run tests
           command: |
             . txenv/bin/activate
-            coverage run --source temcheck --omit '*tests*' -m pytest
+            coverage run --source totem --omit '*tests*' -m pytest
             coverage report -m
             coverage xml
             mkdir -p /tmp/test-results
@@ -70,6 +70,6 @@ workflows:
   run_tests:
     jobs:
       - build
-  temcheck:
+  totem:
     jobs:
-      - temcheck
+      - totem

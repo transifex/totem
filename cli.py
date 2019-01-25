@@ -5,8 +5,8 @@ import sys
 
 import click
 import yaml
-from temcheck.main import LocalTemCheck, PreCommitLocalTemCheck, PRTemCheck
-from temcheck.reporting.console import Color
+from totem.main import LocalCheck, PRCheck, PreCommitLocalCheck
+from totem.reporting.console import Color
 
 
 def run_checks(
@@ -26,8 +26,8 @@ def run_checks(
         only the pending commit will be checked (as in a pre-commit fashion)
     """
     if not config_file:
-        if os.path.isfile('.temcheck.yml'):
-            config_file = '.temcheck.yml'
+        if os.path.isfile('.totem.yml'):
+            config_file = '.totem.yml'
         else:
             config_file = './contrib/config/default.yml'
     try:
@@ -47,12 +47,12 @@ def run_checks(
         sys.exit(1)
 
     if pr_url:
-        check = PRTemCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
+        check = PRCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
     else:
         if not arguments:
-            check = LocalTemCheck(config_dict=config)
+            check = LocalCheck(config_dict=config)
         else:
-            check = PreCommitLocalTemCheck(config_dict=config)
+            check = PreCommitLocalCheck(config_dict=config)
 
     results = check.run()
     if results.errors:
@@ -72,7 +72,7 @@ def main(
     If a URL of a pull request is given, it performs all checks on it.
     If no such URL is given, the checks run locally.
 
-    If no `config_file` is given, it attempts to use `.temcheck.yml`.
+    If no `config_file` is given, it attempts to use `.totem.yml`.
     If that is not found, it defaults to `contrib/config/default.yml`.
 
     A command line function.

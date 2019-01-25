@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from temcheck.checks.content import (
+from totem.checks.content import (
     BaseContentProvider,
     BaseGitContentProviderFactory,
     BaseGitServiceContentProviderFactory,
@@ -59,7 +59,7 @@ class TestBaseGitContentProviderFactory:
         assert factory._providers['type2'] == Check2
         assert factory._providers.get('type3') is None
 
-    @patch('temcheck.checks.content.BaseGitContentProviderFactory._get_defaults')
+    @patch('totem.checks.content.BaseGitContentProviderFactory._get_defaults')
     def test_default_registration_works(self, mock_get_defaults):
         mock_get_defaults.return_value = {'type1': Check1, 'type2': Check2}
 

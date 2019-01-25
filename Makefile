@@ -15,4 +15,4 @@ clean-build:
 	rm --force --recursive *.egg-info
 
 tests:
-	    coverage run --source temcheck --omit '*tests*' -m pytest && coverage report -m
+	    coverage run --source totem --omit '*tests*' -m pytest && coverage report -m

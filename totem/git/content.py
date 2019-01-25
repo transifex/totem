@@ -4,9 +4,9 @@ from functools import lru_cache
 from typing import Type, Union
 
 from git import Repo
-from temcheck.checks.checks import TYPE_BRANCH_NAME, TYPE_COMMIT_MESSAGE
-from temcheck.checks.content import BaseContentProvider, BaseGitContentProviderFactory
-from temcheck.checks.core import Check
+from totem.checks.checks import TYPE_BRANCH_NAME, TYPE_COMMIT_MESSAGE
+from totem.checks.content import BaseContentProvider, BaseGitContentProviderFactory
+from totem.checks.core import Check
 
 
 class BranchContentProvider(BaseContentProvider):

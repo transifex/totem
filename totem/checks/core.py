@@ -1,7 +1,7 @@
 from typing import Type, Union
 
-from temcheck.checks.config import CheckConfig
-from temcheck.checks.results import STATUS_ERROR, STATUS_FAIL, STATUS_PASS, CheckResult
+from totem.checks.config import CheckConfig
+from totem.checks.results import STATUS_ERROR, STATUS_FAIL, STATUS_PASS, CheckResult
 
 
 class Check:

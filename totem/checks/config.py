@@ -157,7 +157,7 @@ class ConfigFactory:
 
         # If `include_pr` is True (e.g. when running on a local repo),
         # exclude all PR-only checks
-        from temcheck.checks.checks import PR_TYPES_CHECKS
+        from totem.checks.checks import PR_TYPES_CHECKS
 
         if not include_pr:
             checks = {
