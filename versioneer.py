@@ -285,7 +285,7 @@ import re
 import subprocess
 import sys
 
-from ._version import get_versions
+from totem._version import get_versions
 
 try:
     import configparser
