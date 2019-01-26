@@ -29,7 +29,8 @@ def run_checks(
         if os.path.isfile('.totem.yml'):
             config_file = '.totem.yml'
         else:
-            config_file = './contrib/config/default.yml'
+            package_root = os.path.split(__file__)[0]
+            config_file = os.path.join(package_root, 'contrib/config/default.yml')
     try:
         with open(config_file, 'r') as f:
             try:
