@@ -21,7 +21,7 @@ jobs:
         command: pip install git+ssh://git@github.com/transifex/totem.git@devel
     - run:
         name: Run totem
-        command: totem --pr-url $CIRCLE_PULL_REQUEST --config-file .totem.yml --details-url $CIRCLE_BUILD_URL
+        command: totem --pr-url "$CIRCLE_PULL_REQUEST" --config-file ".totem.yml" --details-url "$CIRCLE_BUILD_URL"
 
   build:
     working-directory: ~/transifex/totem
