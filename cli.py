@@ -47,6 +47,14 @@ def run_checks(
         print(Color.format('[error]Error opening config file: {}[end]'.format(e)))
         sys.exit(1)
 
+    print(
+        'Running with arguments:\n'
+        ' - PR URL: "{pr_url}"\n'
+        ' - Config file path: "{config_file}"\n'
+        ' - Details URL: "{details_url}"'.format(
+            pr_url=pr_url, config_file=config_file, details_url=details_url
+        )
+    )
     if pr_url:
         check = PRCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
     else:
