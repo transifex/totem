@@ -29,7 +29,7 @@ from totem.checks.suite import CheckSuite
 from totem.git.content import GitContentProviderFactory, PreCommitContentProviderFactory
 from totem.github.content import GithubContentProviderFactory, GithubPRContentProvider
 from totem.github.utils import parse_pr_url
-from totem.reporting.console import LocalConsoleReport, PRConsoleReport
+from totem.reporting.console import Color, LocalConsoleReport, PRConsoleReport
 from totem.reporting.pr import PRCommentReport
 
 
@@ -136,7 +136,16 @@ class PRCheck(BaseCheck):
 
         self.pr_url = pr_url
         self.details_url = details_url
-        self.full_repo_name, self.pr_number = parse_pr_url(pr_url)
+        try:
+            self.full_repo_name, self.pr_number = parse_pr_url(pr_url)
+        except IndexError:
+            print(
+                Color.format(
+                    '[error]PR URL cannot be parsed, '
+                    'seems invalid: "{}"[end]'.format(pr_url)
+                )
+            )
+            raise
         self._content_provider_factory = GithubContentProviderFactory(
             self.full_repo_name, self.pr_number
         )
