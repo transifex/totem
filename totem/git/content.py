@@ -19,7 +19,11 @@ class BranchContentProvider(BaseContentProvider):
         :rtype: dict
         """
         repo = Repo(os.getcwd())
-        branch_name = repo.head.ref.name
+        if repo.head.is_detached:
+            branch_name = None
+        else:
+            branch_name = repo.head.ref.name
+        
         return {'branch': branch_name}
 
 
@@ -50,7 +54,10 @@ class CommitsContentProvider(BaseContentProvider):
         :rtype: dict
         """
         repo = Repo(os.getcwd())
-        branch_name = repo.head.ref.name
+        if repo.head.is_detached:
+            branch_name = repo.head.commit.hexsha
+        else:
+            branch_name = repo.head.ref.name
         last_commit = repo.commit(branch_name)
         parent_ref = last_commit.parents[0]
 

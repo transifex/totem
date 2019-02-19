@@ -44,6 +44,12 @@ class BranchNameCheck(Check):
         pattern = self._from_config('pattern')
         branch_name = content.get('branch')
 
+        if branch_name is None:
+            return self._get_success(
+                message='Branch name not available, skipping branch name validation '
+                        '(could be a detached head)'
+            )
+
         if not branch_name:
             return self._get_error(
                 ERROR_INVALID_CONTENT, message='Branch name not defined or empty'
