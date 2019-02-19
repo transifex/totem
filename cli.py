@@ -49,18 +49,27 @@ def run_checks(
 
     print(
         'Running with arguments:\n'
-        ' - PR URL: "{pr_url}"\n'
-        ' - Config file path: "{config_file}"\n'
-        ' - Details URL: "{details_url}"'.format(
-            pr_url=pr_url, config_file=config_file, details_url=details_url
+        ' - PR URL: {pr_url}\n'
+        ' - Config file path: {config_file}\n'
+        ' - Details URL: {details_url}'.format(
+            pr_url=pr_url if pr_url is None else '"{}"'.format(pr_url),
+            config_file=(
+                config_file if config_file is None else '"{}"'.format(config_file)
+            ),
+            details_url=(
+                details_url if details_url is None else '"{}"'.format(details_url)
+            ),
         )
     )
     if pr_url:
+        print('Running in PRCheck mode')
         check = PRCheck(config_dict=config, pr_url=pr_url, details_url=details_url)
     else:
         if not arguments:
+            print('Running in LocalCheck mode')
             check = LocalCheck(config_dict=config)
         else:
+            print('Running in PreCommitLocalCheck mode')
             check = PreCommitLocalCheck(config_dict=config)
 
     results = check.run()
