@@ -46,8 +46,10 @@ class BranchNameCheck(Check):
 
         if branch_name is None:
             return self._get_success(
-                message='Branch name not available, skipping branch name validation '
-                        '(could be a detached head)'
+                message=(
+                    'Branch name not available, skipping branch name validation '
+                    '(could be a detached head)'
+                )
             )
 
         if not branch_name:
@@ -325,7 +327,7 @@ class CommitMessagesCheck(Check):
         # or the string ends (if no newline exists)
         # The body is the rest. If there is no newline in the message,
         # then the body is considered to be empty
-        subject = message
+        subject = message.rstrip('\n')
         body_lines: List[str] = []
         if '' in lines:
             separator_index = lines.index('')
@@ -386,19 +388,19 @@ class CommitMessagesCheck(Check):
             msg = 'Subject has {} characters but should be between {} and {}'.format(
                 len(subject), min_length, max_length
             )
-            errors['subject_length'] = msg
+            errors['error_subject_length'] = msg
 
         if not subject_pattern_ok:
             msg = 'Subject does not follow pattern: "{}". Explanation: {}'.format(
                 subject_pattern, subject_config.get('pattern_descr', 'None')
             )
-            errors['subject_pattern'] = msg
+            errors['error_subject_pattern'] = msg
 
         if not body_length_ok:
             msg = 'One or more lines of the body are longer than {} characters'.format(
                 max_line_length
             )
-            errors['body_length'] = msg
+            errors['error_body_length'] = msg
 
         if not body_size_ok:
             msg = (
@@ -409,7 +411,7 @@ class CommitMessagesCheck(Check):
                     min_changes, actual_changes, min_body_lines, len(body_lines)
                 )
             )
-            errors['smart_body_size'] = msg
+            errors['error_smart_body_size'] = msg
 
         return errors
 
