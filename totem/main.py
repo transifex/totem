@@ -287,9 +287,7 @@ class LocalCheck(BaseCheck):
         suite.run()
 
         report = LocalConsoleReport(suite)
-        show_warnings = report.report_details.get('show_warnings', True)
-        if suite.results.errors or (show_warnings and suite.results.warnings):
-            print(report.get_detailed_results(suite.results))
+        print(report.get_detailed_results(suite.results))
 
         return suite.results
 
