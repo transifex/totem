@@ -19,9 +19,27 @@ jobs:
     - run:
         name: Install totem
         command: pip install git+ssh://git@github.com/transifex/totem.git@devel
+    # The pull request string can be empty for 2 reasons:
+    #   1. This is a merge commit, so there is currently no PR
+    #   2. A bug of CircleCI does not populate the PR variable
+    # We cannot know for sure why this has happened. We check the current
+    # branch and if it's not `master` or `devel`, then we assume
+    # we've hit the bug.
     - run:
-        name: Run totem
-        command: totem --pr-url "$CIRCLE_PULL_REQUEST" --config-file ".totem.yml" --details-url "$CIRCLE_BUILD_URL"
+        name: Run Totem
+        command: |
+          if [[ "$CIRCLE_BRANCH" == "devel" || "$CIRCLE_BRANCH" == "master" ]]; then
+            echo "Totem is disabled on branch '$CIRCLE_BRANCH'. Won't execute."
+          else
+            if [[ "$CIRCLE_PULL_REQUEST" == "" ]]; then
+              echo "\$CIRCLE_PULL_REQUEST is empty. It's probably due to CircleCI's bug"
+              echo "(https://discuss.circleci.com/t/circle-pull-request-not-being-set/14409)."
+              echo "Please rerun the workflow until the PR variable is populated by CircleCI."
+              exit 1
+            else
+              totem --pr-url "$CIRCLE_PULL_REQUEST" --config-file ".totem.yml" --details-url "$CIRCLE_BUILD_URL"
+            fi
+          fi
 
   build:
     working-directory: ~/transifex/totem
