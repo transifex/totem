@@ -43,7 +43,7 @@ The latter is mainly used as a sign that something might not be right, and can b
 
 
 # Installation
-Totem can be installed by running `pip install totem` (soon to be on PyPi). It requires Python 3.6.0+.
+Totem can be installed by running `pip install totem`. It requires Python 3.6.0+.
 
 # Running on a PR
 ## Command line
