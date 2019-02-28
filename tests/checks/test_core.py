@@ -1,6 +1,6 @@
 import pytest
-from temcheck.checks.config import CheckConfig
-from temcheck.checks.core import Check, CheckFactory
+from totem.checks.config import CheckConfig
+from totem.checks.core import Check, CheckFactory
 
 
 class TestCheck:

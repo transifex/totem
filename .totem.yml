@@ -1,0 +1,42 @@
+
+settings:
+  pr_comment_report:
+    enabled: True
+    delete_previous: True
+    show_empty_sections: False
+    show_message: True
+    show_details: True
+    show_successful: False
+  console_report:
+    show_empty_sections: False
+    show_message: True
+    show_details: True
+    show_successful: False
+  local_console_report:
+    show_empty_sections: False
+    show_message: True
+    show_details: True
+    show_successful: True
+checks:
+  branch_name:
+    pattern: ^[\w\d\-]+$
+    pattern_descr: Branch name must include lowercase characters, digits and dashes, e.g. `update-something`
+    failure_level: error
+  pr_title:
+    pattern: ^[A-Z].+$
+    pattern_descr: PR title must start with a capitalized word, e.g. `Update PyGithub dependency`
+    failure_level: error
+  pr_body_checklist:
+    failure_level: error
+  commit_message:
+    subject:
+      min_length: 10
+      max_length: 50
+      pattern: ^[A-Z].+(?<!\.)$
+      pattern_descr: Commit message subject must start with a capital letter and must not finish with a dot
+    body:
+      max_line_length: 72
+      smart_require:
+        min_changes: 100
+        min_body_lines: 1
+    failure_level: error

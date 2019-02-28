@@ -1,11 +1,48 @@
 # Python CircleCI 2.0 configuration file
 #
 # Check https://circleci.com/docs/2.0/language-python/ for more details
-#
 version: 2
 jobs:
+  totem:
+    docker:
+    - image: python:alpine
+      environment:
+    steps:
+    - checkout
+    - add_ssh_keys:
+        fingerprint:
+          # a public Deploy key of the current repository
+          "8e:61:1b:5d:a2:03:e7:56:3f:a5:f0:37:c8:d8:cc:c5"
+    - run:
+        name: Install git/openssh-client and add github to the list of known hosts
+        command: apk add git openssh-client && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
+    - run:
+        name: Install totem
+        command: pip install git+ssh://git@github.com/transifex/totem.git@devel
+    # The pull request string can be empty for 2 reasons:
+    #   1. This is a merge commit, so there is currently no PR
+    #   2. A bug of CircleCI does not populate the PR variable
+    # We cannot know for sure why this has happened. We check the current
+    # branch and if it's not `master` or `devel`, then we assume
+    # we've hit the bug.
+    - run:
+        name: Run Totem
+        command: |
+          if [[ "$CIRCLE_BRANCH" == "devel" || "$CIRCLE_BRANCH" == "master" ]]; then
+            echo "Totem is disabled on branch '$CIRCLE_BRANCH'. Won't execute."
+          else
+            if [[ "$CIRCLE_PULL_REQUEST" == "" ]]; then
+              echo "\$CIRCLE_PULL_REQUEST is empty. It's probably due to CircleCI's bug"
+              echo "(https://discuss.circleci.com/t/circle-pull-request-not-being-set/14409)."
+              echo "Please rerun the workflow until the PR variable is populated by CircleCI."
+              exit 1
+            else
+              totem --pr-url "$CIRCLE_PULL_REQUEST" --config-file ".totem.yml" --details-url "$CIRCLE_BUILD_URL"
+            fi
+          fi
+
   build:
-    working-directory: ~/transifex/temcheck
+    working-directory: ~/transifex/totem
     docker:
       - image: circleci/python:3.6.1
     steps:
@@ -28,13 +65,13 @@ jobs:
           command: |
             . txenv/bin/activate
             pip install mypy
-            mypy temcheck --strict-optional
+            mypy totem --strict-optional
 
       - run:
           name: Run tests
           command: |
             . txenv/bin/activate
-            coverage run --source temcheck --omit '*tests*' -m pytest
+            coverage run --source totem --omit '*tests*' -m pytest
             coverage report -m
             coverage xml
             mkdir -p /tmp/test-results
@@ -51,3 +88,6 @@ workflows:
   run_tests:
     jobs:
       - build
+  totem:
+    jobs:
+      - totem

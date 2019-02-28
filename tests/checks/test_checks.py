@@ -1,5 +1,5 @@
 import pytest
-from temcheck.checks.checks import (
+from totem.checks.checks import (
     BranchNameCheck,
     CommitMessagesCheck,
     PRBodyChecklistCheck,
@@ -7,8 +7,8 @@ from temcheck.checks.checks import (
     PRBodyIncludesCheck,
     PRTitleCheck,
 )
-from temcheck.checks.config import CheckConfig
-from temcheck.checks.results import (
+from totem.checks.config import CheckConfig
+from totem.checks.results import (
     ERROR_FORBIDDEN_PR_BODY_TEXT,
     ERROR_INVALID_BRANCH_NAME,
     ERROR_INVALID_CONFIG,
@@ -17,6 +17,7 @@ from temcheck.checks.results import (
     ERROR_MISSING_PR_BODY_TEXT,
     ERROR_UNFINISHED_CHECKLIST,
     STATUS_ERROR,
+    STATUS_PASS,
 )
 
 
@@ -47,9 +48,18 @@ class TestBranchNameCheck:
         assert result.success is False
         assert result.error_code == ERROR_INVALID_BRANCH_NAME
 
-    def test_missing_branch_returns_error(self):
+    def test_missing_branch_returns_success(self):
         check = BranchNameCheck(CheckConfig('branch_name', 'error'))
-        result = check.run({})  # no 'branch' entry
+        result = check.run({'branch': None})
+        assert result.status == STATUS_PASS
+        assert result.details['message'] == (
+            'Branch name not available, skipping branch name validation '
+            '(could be a detached head)'
+        )
+
+    def test_empty_branch_returns_error(self):
+        check = BranchNameCheck(CheckConfig('branch_name', 'error'))
+        result = check.run({'branch': ''})
         assert result.status == STATUS_ERROR
         assert result.error_code == ERROR_INVALID_CONTENT
         assert result.details['message'] == 'Branch name not defined or empty'

@@ -1,18 +1,18 @@
 import re
 
 import pyaml
-from temcheck.checks.results import CheckResult
-from temcheck.checks.suite import CheckSuite
-from temcheck.reporting import StringBuilder
+from totem.checks.results import CheckResult
+from totem.checks.suite import CheckSuite
+from totem.reporting import StringBuilder
 
 
 class PRCommentReport:
     """Creates reports to be added as comments on the pull request
     that is being checked."""
 
-    TITLE = '# Pull Request Health Check'
+    TITLE = '# Totem Health Check'
 
-    def __init__(self, suite: CheckSuite, details_url: str=None):
+    def __init__(self, suite: CheckSuite, details_url: str = None):
         """Constructor.
 
         :param CheckSuite suite: the check suite that was executed
@@ -37,7 +37,7 @@ class PRCommentReport:
         builder.add(PRCommentReport.TITLE)
         builder.add(
             'Checking if this PR follows the expected quality standards. '
-            'Powered by [temcheck](https://www.github.com/transifex/temcheck).\n'
+            'Powered by [totem](https://www.github.com/transifex/totem).\n'
         )
 
         comment_settings = self.suite.config.pr_comment_report
@@ -104,7 +104,7 @@ class PRCommentReport:
 
         if self.details_url:
             builder.add(
-                'Visit the [details page]({}) for more information.'.format(
+                '\nVisit the [details page]({}) for more information.'.format(
                     self.details_url
                 )
             )

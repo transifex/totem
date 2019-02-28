@@ -1,10 +1,6 @@
 from typing import List
 
-from temcheck.checks.config import (
-    FAILURE_LEVEL_ERROR,
-    FAILURE_LEVEL_WARNING,
-    CheckConfig,
-)
+from totem.checks.config import FAILURE_LEVEL_ERROR, FAILURE_LEVEL_WARNING, CheckConfig
 
 STATUS_PASS = 'pass'  # The check passed with success
 STATUS_FAIL = 'fail'  # The check was executed properly but failed
@@ -25,7 +21,9 @@ ERROR_INVALID_COMMIT_MESSAGE_FORMAT = 'invalid_commit_message_format'
 class CheckResult:
     """Contains the results of a single Check that was performed."""
 
-    def __init__(self, config: CheckConfig, status: str, error_code: str=None, **details):
+    def __init__(
+        self, config: CheckConfig, status: str, error_code: str = None, **details
+    ):
         """Constructor.
 
         :param CheckConfig config: the related configuration with which the

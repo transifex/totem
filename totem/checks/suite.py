@@ -1,7 +1,7 @@
-from temcheck.checks.config import CheckConfig, Config
-from temcheck.checks.content import BaseGitContentProviderFactory
-from temcheck.checks.core import CheckFactory
-from temcheck.checks.results import (
+from totem.checks.config import CheckConfig, Config
+from totem.checks.content import BaseGitContentProviderFactory
+from totem.checks.core import CheckFactory
+from totem.checks.results import (
     ERROR_GENERIC,
     STATUS_ERROR,
     CheckResult,
@@ -22,7 +22,12 @@ class CheckSuite:
     All checks run synchronously.
     """
 
-    def __init__(self, config: Config, content_provider_factory: BaseGitContentProviderFactory, check_factory: CheckFactory):
+    def __init__(
+        self,
+        config: Config,
+        content_provider_factory: BaseGitContentProviderFactory,
+        check_factory: CheckFactory,
+    ):
         """Constructor.
 
         :param Config config: an object that contains all configuration options,

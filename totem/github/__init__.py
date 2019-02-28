@@ -3,7 +3,7 @@
 from functools import lru_cache
 import os
 
-from temcheck.github.wrappers import GithubService
+from totem.github.wrappers import GithubService
 
 
 @lru_cache(maxsize=None)

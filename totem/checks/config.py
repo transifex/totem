@@ -142,7 +142,7 @@ class ConfigFactory:
     configuration for the whole library."""
 
     @staticmethod
-    def create(config_dict: dict, include_pr: bool=True) -> Config:
+    def create(config_dict: dict, include_pr: bool = True) -> Config:
         """Create a new Config object.
 
         :param dict config_dict: a dictionary with the full configuration
@@ -157,7 +157,7 @@ class ConfigFactory:
 
         # If `include_pr` is True (e.g. when running on a local repo),
         # exclude all PR-only checks
-        from temcheck.checks.checks import PR_TYPES_CHECKS
+        from totem.checks.checks import PR_TYPES_CHECKS
 
         if not include_pr:
             checks = {

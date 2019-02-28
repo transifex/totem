@@ -1,6 +1,6 @@
--   id: temcheck
-    name: temcheck
-    description: 'TEM Check: Check the quality of your PRs and commits'
-    entry: temcheck
+-   id: totem
+    name: totem
+    description: 'Totem: Check the quality of your PRs and commits'
+    entry: totem
     language: python
     language_version: python3

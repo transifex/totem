@@ -13,7 +13,7 @@ from functools import lru_cache
 from typing import Type, Union
 
 from github.PullRequest import PullRequest
-from temcheck.checks.checks import (
+from totem.checks.checks import (
     TYPE_BRANCH_NAME,
     TYPE_COMMIT_MESSAGE,
     TYPE_PR_BODY_CHECKLIST,
@@ -21,13 +21,13 @@ from temcheck.checks.checks import (
     TYPE_PR_BODY_INCLUDES,
     TYPE_PR_TITLE,
 )
-from temcheck.checks.content import (
+from totem.checks.content import (
     BaseContentProvider,
     BaseGitServiceContentProviderFactory,
 )
-from temcheck.checks.core import Check
-from temcheck.github import github_service
-from temcheck.reporting.pr import PRCommentReport
+from totem.checks.core import Check
+from totem.github import github_service
+from totem.reporting.pr import PRCommentReport
 
 
 class GithubContentProvider(BaseContentProvider):
@@ -85,8 +85,8 @@ class GithubPRContentProvider(GithubContentProvider):
             return {}
         return github_service().create_pr_comment(self.repo_name, self.pr_number, body)
 
-    def delete_previous_pr_comment(self, latest_comment_id: int)-> bool:
-        """Delete the previous temcheck comment on the PR.
+    def delete_previous_pr_comment(self, latest_comment_id: int) -> bool:
+        """Delete the previous totem comment on the PR.
 
         Only deletes 1 comment. `latest_comment_id` is given
         for ensuring that the newest comment will not be deleted.
