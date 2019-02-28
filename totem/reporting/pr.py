@@ -10,7 +10,7 @@ class PRCommentReport:
     """Creates reports to be added as comments on the pull request
     that is being checked."""
 
-    TITLE = '# Pull Request Health Check'
+    TITLE = '# Totem Health Check'
 
     def __init__(self, suite: CheckSuite, details_url: str = None):
         """Constructor.
@@ -104,7 +104,7 @@ class PRCommentReport:
 
         if self.details_url:
             builder.add(
-                'Visit the [details page]({}) for more information.'.format(
+                '\nVisit the [details page]({}) for more information.'.format(
                     self.details_url
                 )
             )

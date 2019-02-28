@@ -3,18 +3,18 @@ Totem
 
 Totem is a Health Check library that checks whether or not certain quality standards are followed on Pull Requests or local Git repositories.
 
-It is inspired by the [Transifex Engineering Manifesto (TEM)](https://tem.transifex.com/), a document that defines the Quality Standards used in Transifex. Totem was created as an automated way to ensure high quality in Git-related guidelines described in the TEM. 
+It is inspired by the [Transifex Engineering Manifesto (TEM)](https://tem.transifex.com/), a document that defines the Quality Standards used in [Transifex](https://www.transifex.com). Totem was created as an automated way to ensure high quality in Git-related guidelines described in the TEM. 
 
-Currently it supports Github Pull Requests only.
+Currently it supports Github Pull Requests only, but can also be used locally.
 
 
 # Features
-- Multiple quality checks on a Pull Request
+- Multiple quality checks on Pull Requests
 - Multiple quality checks on local Git repositories 
-- Comes with pre-commit support, and can also be added as a pre-push Git hook
-- Configurable: you can only enable the checks you want, and define the configuration parameters for each check, so you can apply the tool to various repositories with different options on each
+- Comes with [pre-commit](http://www.pre-commit.com) support, and can also be added as a pre-push Git hook
+- Configurable: you can only enable the checks you want, and define the configuration parameters for each check
 - Detailed report in the console, makes it easy to spot issues
-- Ability for a useful summary shown as a comment created on the Pull Request with configurable content (disabled by default)  
+- Compact summary shown as a comment created on the Pull Request, with configurable content (disabled by default)  
 
 
 # Checks
@@ -29,10 +29,10 @@ Totem supports the following checks:
 - **commit_message**: the message of each commit must follow these guidelines:
   * subject:
     * has a minimum and maximum allowed length
-    * must start with an uppercase character and *not* end with a '.'
+    * must follow a certain regex pattern, e.g. start with an uppercase character and *not* end with a '.'
   * body
     * if there is a body, each line has a maximum allowed length
-    * if the commit has a lot of changes, a body must be present and must have a minimum number of lines
+    * if the number of total changed lines in a commit is above a certain threshold, a body must be present and must have a minimum number of lines
 
 With a custom configuration, you can define which checks will be executed. All of the checks have at least a certain level of configuration.  
 
@@ -42,16 +42,21 @@ The former can be used in order to prevent a Pull Request from being merged, a l
 The latter is mainly used as a sign that something might not be right, and can be useful when comitting in or pushing from a local repo, or when reviewing a Pull Request. The warning level is necessary because in some repos a rule may not be always applicable, so it should be judged on a case-by-case basis.  
 
 
-# Installation & Usage
-Totem can be installed by running `pip install git+ssh://git@github.com/transifex/totem.git@master` (soon to be on PyPi). It requires Python 3.6.0+.
+# Installation
+Totem can be installed by running `pip install totem` (soon to be on PyPi). It requires Python 3.6.0+.
 
-## Running on a PR
-### Command line
+# Running on a PR
+## Command line
 Totem provides a console command and requires only the URL of the pull request to check. 
 By default, it will attempt to read the `.totem.yml` file on the repo as configuration. If it is not found, it defaults to `./contrib/config/sample.yml` on the Totem repo.
 
 ```
 totem -p https://www.github.com/:owner/:repo/pulls/:number
+```
+
+Example:
+```
+totem -p https://github.com/transifex/totem/pull/17
 ```
 
 NOTE: the default configuration will *not* create a comment on the Pull Request being checked. If you use a custom config, you can enable the comment feature.   
@@ -64,15 +69,66 @@ totem -p https://www.github.com/:owner/:repo/pulls/:number -c ./totem_config.yml
 
 The project includes a sample configuration file, which can be found at `./contrib/config/sample.yml`.
 
-### CI
+## CI
 When running from a CI service, you need to retrieve the pull request URL from the environment variables the service provides. Also, you can set the URL of the CI build page, in which case a link appears on the PR comment that the Totem creates.
 
-For example, with CircleCI you need to make the following call:
+For example, you make a call like this:
 ```
-totem --pr-url $CIRCLE_PULL_REQUEST --config-file .totem.yml --details-url $CIRCLE_BUILD_URL
+totem --pr-url "<pull_request_url>" --config-file ".totem.yml" --details-url "<ci_service_build_page>"
+```
+where `<pull_request_url>` is a variable given from the CI service. For example, for CircleCI it's `$CIRCLE_PULL_REQUEST`.
+
+### Github authentication
+In order to run Totem on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, you need to add an environment variable with the Github access token to your CI service:
+`GITHUB_ACCESS_TOKEN=<my_super_secret_token>`
+
+You also need to authorize add a deploy key on the CI service. For example, on Circle CI go to the project Settings > Permissions > Checkout SSH keys and click on [Add Deploy key].
+
+An example of a complete setup on a CI, together with GitHub authentication, looks like this:
+```yaml
+jobs:
+  totem:
+    docker:
+    - image: python:alpine
+      environment:
+    steps:
+    - checkout
+    - add_ssh_keys:
+        fingerprint:
+          # a public deploy key of the current repository on GitHub, something like:
+          "8a:32:b1:d4:24:12:c4:33:8f:ac:0f:37:c8:84:c4:cc"
+    - run:
+        name: Install git/openssh-client and add github to the list of known hosts
+        command: apk add git openssh-client && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
+    - run:
+        name: Install totem
+        command: pip install totem
+    - run:
+        name: Run Totem
+        command: totem --pr-url "<pull_request_url>" --config-file ".totem.yml" --details-url "<ci_service_build_page>"
+``` 
+
+### CircleCI
+Keep in mind that because of a bug in CircleCI, sometimes the `$CIRCLE_PULL_REQUEST` variable is empty. If the pull request argument in the `totem` CLI command is empty, Totem runs in local mode because there is no pull request to check. This can create false positives (that everything is OK when in fact it's not). Therefore, in order to run Totem without the false positives, the following workaround can be used: 
+```shell
+if [[ "$CIRCLE_BRANCH" == "devel" || "$CIRCLE_BRANCH" == "master" ]]; then
+  echo "Totem is disabled on branch '$CIRCLE_BRANCH'. Won't execute."
+else
+  if [[ "$CIRCLE_PULL_REQUEST" == "" ]]; then
+    echo "\$CIRCLE_PULL_REQUEST is empty. It's probably due to CircleCI's bug"
+    echo "(https://discuss.circleci.com/t/circle-pull-request-not-being-set/14409)."
+    echo "Please rerun the workflow until the PR variable is populated by CircleCI."
+    exit 1
+  else
+    totem --pr-url "$CIRCLE_PULL_REQUEST" --config-file ".totem.yml" --details-url "$CIRCLE_BUILD_URL"
+  fi
+fi
 ```
 
-## Running on a local repository
+The script above does not run Totem if the current branch is `devel` or `master`, which means that it's running on a merge commit. Of course, these are just sample branches and may differ from the base branches you have in your workflow. 
+
+
+# Running on a local repository
 
 You can call the command without any arguments. In this case it reads the `.totem.yml` file on the repo as configuration. If this file does not exist, the tool cannot run.
 ```
@@ -84,7 +140,28 @@ You can also define a custom config file to use.
 totem -c <file>
 ```
 
-### Pre-push hook
+The local mode of Totem runs only a subset of the available (and enabled) checks:
+- **branch_name**: the name of the branch must follow a certain regex pattern
+- **commit_message**: the message of each commit must follow certain guidelines
+
+The reason is that the rest of the checks require a Pull Request, which is not available locally. 
+
+
+## Pre-commit hook
+In order to use it as a [pre-commit](http://www.pre-commit.com) hook, add the following in your `.pre-commit-config.yaml` file.
+
+```yaml
+- repo: https://github.com/transifex/totem/
+  rev: master
+  hooks:
+  - id: totem
+```
+
+Make sure you follow the instructions given in [pre-commit](http://www.pre-commit.com) on how to install and use the hooks.
+As soon as you do that, Totem will run every time you attempt to create a new commit and will abort the command in case any checks fail. Note that it will not abort in case of warnings. 
+
+
+## Pre-push hook
 
 In order to use it as a pre-push hook, add the following in the `.git/hooks/pre-push` file:
 ```
@@ -95,10 +172,6 @@ totem
 Note: Make sure the file is executable (`chmod +x .git/hooks/pre-push`).
 
 This way, totem will run every time you call `git push`, and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
-
-## Github authentication
-In order to run Totem on pull requests of private projects, as well as in order to be able to enable reporting in PR comments, the tool needs to be authenticated when contacting Github. In order to do that, all you have to do is to add an environment variable with the Github access token:
-`GITHUB_ACCESS_TOKEN=<my_super_secret_token>`
 
 
 # Configuration
@@ -164,7 +237,7 @@ Checking if this PR follows the expected quality standards. Powered by [totem](h
 
 failures | warnings | successful
 ----------- | ------------- | -------------
-| 0 | 0 | 3
+| 2 | 1 | 3
 
 
 
