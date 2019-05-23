@@ -1,20 +1,19 @@
-Totem
------
+![Totem](assets/totem.jpg)
 
 Totem is a Health Check library that checks whether or not certain quality standards are followed on Pull Requests or local Git repositories.
 
-It is inspired by the [Transifex Engineering Manifesto (TEM)](https://tem.transifex.com/), a document that defines the Quality Standards used in [Transifex](https://www.transifex.com). Totem was created as an automated way to ensure high quality in Git-related guidelines described in the TEM. 
+It is inspired by the [Transifex Engineering Manifesto (TEM)](https://tem.transifex.com/), a document that defines the Quality Standards used in [Transifex](https://www.transifex.com). Totem was created as an automated way to ensure high quality in Git-related guidelines described in the TEM.
 
 Currently it supports Github Pull Requests only, but can also be used locally.
 
 
 # Features
 - Multiple quality checks on Pull Requests
-- Multiple quality checks on local Git repositories 
+- Multiple quality checks on local Git repositories
 - Comes with [pre-commit](http://www.pre-commit.com) support, and can also be added as a pre-push Git hook
 - Configurable: you can only enable the checks you want, and define the configuration parameters for each check
 - Detailed report in the console, makes it easy to spot issues
-- Compact summary shown as a comment created on the Pull Request, with configurable content (disabled by default)  
+- Compact summary shown as a comment created on the Pull Request, with configurable content (disabled by default)
 
 
 # Checks
@@ -34,12 +33,12 @@ Totem supports the following checks:
     * if there is a body, each line has a maximum allowed length
     * if the number of total changed lines in a commit is above a certain threshold, a body must be present and must have a minimum number of lines
 
-With a custom configuration, you can define which checks will be executed. All of the checks have at least a certain level of configuration.  
+With a custom configuration, you can define which checks will be executed. All of the checks have at least a certain level of configuration.
 
 ## Failure level
 If a check is executed but fails to pass, it can either provide a failed status check (exit status = 1) or simply print out a warning.
 The former can be used in order to prevent a Pull Request from being merged, a local commit to be completed, or local changes to be pushed to the remote, until all Totem checks are fixed.
-The latter is mainly used as a sign that something might not be right, and can be useful when comitting in or pushing from a local repo, or when reviewing a Pull Request. The warning level is necessary because in some repos a rule may not be always applicable, so it should be judged on a case-by-case basis.  
+The latter is mainly used as a sign that something might not be right, and can be useful when comitting in or pushing from a local repo, or when reviewing a Pull Request. The warning level is necessary because in some repos a rule may not be always applicable, so it should be judged on a case-by-case basis.
 
 
 # Installation
@@ -47,7 +46,7 @@ Totem can be installed by running `pip install totem`. It requires Python 3.6.0+
 
 # Running on a PR
 ## Command line
-Totem provides a console command and requires only the URL of the pull request to check. 
+Totem provides a console command and requires only the URL of the pull request to check.
 By default, it will attempt to read the `.totem.yml` file on the repo as configuration. If it is not found, it defaults to `./contrib/config/sample.yml` on the Totem repo.
 
 ```
@@ -59,7 +58,7 @@ Example:
 totem -p https://github.com/transifex/totem/pull/17
 ```
 
-NOTE: the default configuration will *not* create a comment on the Pull Request being checked. If you use a custom config, you can enable the comment feature.   
+NOTE: the default configuration will *not* create a comment on the Pull Request being checked. If you use a custom config, you can enable the comment feature.
 
 A custom config can be provided and supports a lot of options.
 
@@ -106,10 +105,10 @@ jobs:
     - run:
         name: Run Totem
         command: totem --pr-url "<pull_request_url>" --config-file ".totem.yml" --details-url "<ci_service_build_page>"
-``` 
+```
 
 ### CircleCI
-Keep in mind that because of a bug in CircleCI, sometimes the `$CIRCLE_PULL_REQUEST` variable is empty. If the pull request argument in the `totem` CLI command is empty, Totem runs in local mode because there is no pull request to check. This can create false positives (that everything is OK when in fact it's not). Therefore, in order to run Totem without the false positives, the following workaround can be used: 
+Keep in mind that because of a bug in CircleCI, sometimes the `$CIRCLE_PULL_REQUEST` variable is empty. If the pull request argument in the `totem` CLI command is empty, Totem runs in local mode because there is no pull request to check. This can create false positives (that everything is OK when in fact it's not). Therefore, in order to run Totem without the false positives, the following workaround can be used:
 ```shell
 if [[ "$CIRCLE_BRANCH" == "devel" || "$CIRCLE_BRANCH" == "master" ]]; then
   echo "Totem is disabled on branch '$CIRCLE_BRANCH'. Won't execute."
@@ -125,7 +124,7 @@ else
 fi
 ```
 
-The script above does not run Totem if the current branch is `devel` or `master`, which means that it's running on a merge commit. Of course, these are just sample branches and may differ from the base branches you have in your workflow. 
+The script above does not run Totem if the current branch is `devel` or `master`, which means that it's running on a merge commit. Of course, these are just sample branches and may differ from the base branches you have in your workflow.
 
 
 # Running on a local repository
@@ -144,7 +143,7 @@ The local mode of Totem runs only a subset of the available (and enabled) checks
 - **branch_name**: the name of the branch must follow a certain regex pattern
 - **commit_message**: the message of each commit must follow certain guidelines
 
-The reason is that the rest of the checks require a Pull Request, which is not available locally. 
+The reason is that the rest of the checks require a Pull Request, which is not available locally.
 
 
 ## Pre-commit hook
@@ -158,7 +157,7 @@ In order to use it as a [pre-commit](http://www.pre-commit.com) hook, add the fo
 ```
 
 Make sure you follow the instructions given in [pre-commit](http://www.pre-commit.com) on how to install and use the hooks.
-As soon as you do that, Totem will run every time you attempt to create a new commit and will abort the command in case any checks fail. Note that it will not abort in case of warnings. 
+As soon as you do that, Totem will run every time you attempt to create a new commit and will abort the command in case any checks fail. Note that it will not abort in case of warnings.
 
 
 ## Pre-push hook
@@ -263,7 +262,7 @@ failures | warnings | successful
 
 :eight_pointed_black_star: **Warnings (1)** - *Fixing these may not be applicable, please review them case by case*
 - **pr_title**
-  PR title `"Fix things"` does not match pattern: `"^XX-[0-9]+ .+$"`. 
+  PR title `"Fix things"` does not match pattern: `"^XX-[0-9]+ .+$"`.
   Explanation: PR title must start with the Jira ID
 
 :white_check_mark: **Successful (3)** - *Good job on these!*
