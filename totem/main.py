@@ -6,6 +6,7 @@ For example, a client could be a CLI.
 If more Git services need to be supported in the future (other than Github),
 this needs to be refactored.
 """
+from typing import List
 
 from totem.checks.checks import (
     TYPE_BRANCH_NAME,
@@ -45,7 +46,7 @@ class BaseCheck:
         self._register_defaults()
         self._content_provider_factory: BaseGitContentProviderFactory = None
 
-    def run(self) -> CheckSuiteResults:
+    def run(self, checks: List[str] = None) -> CheckSuiteResults:
         """Run all checks.
 
         Subclasses need to do the following:
@@ -54,6 +55,7 @@ class BaseCheck:
          3. Run the suite, using `suite.run()`
          4. Return the results, via `return suite.results`
 
+        :param List[str] checks: a list of IDs of checks to include in this run
         :return: the results of the execution of the tests
         :rtype: CheckSuiteResults
         """
@@ -80,11 +82,12 @@ class BaseCheck:
         for config_type, check_class in defaults.items():
             self.check_factory.register(config_type, check_class)
 
-    def _create_suite(self, config) -> CheckSuite:
+    def _create_suite(self, config, checks: List[str] = None) -> CheckSuite:
         """Create a check suite to run all checks defined in the
         given config.
 
         :param Config config: the full configuration of all checks
+        :param List[str] checks: a list of IDs of checks to include in this run
         :return: the suite that will run all checks
         :rtype: CheckSuite
         """
@@ -92,6 +95,7 @@ class BaseCheck:
             config=config,
             content_provider_factory=self._content_provider_factory,
             check_factory=self._check_factory,
+            checks=checks,
         )
 
 
@@ -150,14 +154,16 @@ class PRCheck(BaseCheck):
             self.full_repo_name, self.pr_number
         )
 
-    def run(self) -> CheckSuiteResults:
+    def run(self, checks: List[str] = None) -> CheckSuiteResults:
         """Run all registered checks of the suite.
 
+        :param List[str] checks: a list of IDs of checks to include in this run
         :return: the results of the execution of the tests
         :rtype: CheckSuiteResults
         """
+        checks = checks or []
         config = ConfigFactory.create(self._config_dict, include_pr=True)
-        suite = self._create_suite(config)
+        suite = self._create_suite(config, checks=checks)
 
         report = PRConsoleReport(suite)
         print(report.get_pre_run_report(config, self.pr_url))
@@ -276,14 +282,15 @@ class LocalCheck(BaseCheck):
         self._config_dict = config_dict
         self._content_provider_factory = GitContentProviderFactory()
 
-    def run(self) -> CheckSuiteResults:
+    def run(self, checks: List[str] = None) -> CheckSuiteResults:
         """Run all registered checks of the suite.
 
+        :param List[str] checks: a list of IDs of checks to include in this run
         :return: the results of the execution of the tests
         :rtype: CheckSuiteResults
         """
         config = ConfigFactory.create(self._config_dict, include_pr=False)
-        suite = self._create_suite(config)
+        suite = self._create_suite(config, checks=checks)
         suite.run()
 
         report = LocalConsoleReport(suite)
@@ -329,14 +336,15 @@ class PreCommitLocalCheck(BaseCheck):
         self._config_dict = config_dict
         self._content_provider_factory = PreCommitContentProviderFactory()
 
-    def run(self) -> CheckSuiteResults:
+    def run(self, checks: List[str] = None) -> CheckSuiteResults:
         """Run all registered checks of the suite.
 
+        :param List[str] checks: a list of IDs of checks to include in this run
         :return: the results of the execution of the tests
         :rtype: CheckSuiteResults
         """
         config = ConfigFactory.create(self._config_dict, include_pr=False)
-        suite = self._create_suite(config)
+        suite = self._create_suite(config, checks=checks)
         suite.run()
 
         report = LocalConsoleReport(suite)

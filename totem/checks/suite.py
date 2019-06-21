@@ -29,6 +29,7 @@ class CheckSuite:
         config: Config,
         content_provider_factory: BaseGitContentProviderFactory,
         check_factory: CheckFactory,
+        checks: List[str] = None,
     ):
         """Constructor.
 
@@ -38,10 +39,13 @@ class CheckSuite:
             knows how to create content providers for a specific Git service
         :param CheckFactory check_factory: an object that knows how to create
             Check subclasses for every known configuration type
+        :param List[str] checks: a list of IDs of checks to include in this run
         """
         self._content_provider_factory = content_provider_factory
         self._check_factory = check_factory
         self.config = config
+
+        self.included_check_ids = checks or self.config.check_configs.keys()
         self.results = CheckSuiteResults()
 
     def run(self):
@@ -51,6 +55,10 @@ class CheckSuite:
         This is the main point of the application where the actual magic happens.
         """
         for check_type, config in self.config.check_configs.items():
+            if check_type not in self.included_check_ids:
+                print('Ignoring check "{}"'.format(check_type))
+                continue
+
             results = self._run_check(config, self._check_factory)
             for r in results:
                 self.results.add(r)
