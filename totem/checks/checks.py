@@ -257,6 +257,11 @@ class CommitMessagesCheck(Check):
     # These keys are in each failed commit dict
     DEFAULT_KEYS = ('sha', 'url', 'commit_order')
 
+    # If the commit message includes this, no checks are made
+    IGNORE_MSG_FLAG = '[!totem]'
+    # If a line ends with this, no checks are made for that line
+    IGNORE_LINE_FLAG = '#!totem'
+
     def run(self, content: dict) -> List[CheckResult]:
         """Check if the commit messages of a PR are properly formatted.
 
@@ -349,6 +354,10 @@ class CommitMessagesCheck(Check):
             index = separator_index + 1
             body_lines = lines[index:]
 
+        # If the ignore flag is found in any of the body lines, ignore all checks
+        if any([CommitMessagesCheck.IGNORE_MSG_FLAG in x for x in body_lines]):
+            return {}
+
         # Check subject
         subject_config = self._from_config('subject')
         max_length = subject_config.get('max_length', None)
@@ -374,17 +383,21 @@ class CommitMessagesCheck(Check):
         # a URL
         else:
             ignore_urls = body_config.get('ignore_urls', True)
+
+            def check_line(line: str) -> bool:
+                # If line ends in ignore flag, it's legit
+                if line.rstrip().endswith(CommitMessagesCheck.IGNORE_LINE_FLAG):
+                    return True
+
+                # If the line is within the length limits, accept it
+                if len(line) <= max_line_length:
+                    return True
+
+                # Otherwise, and if URLs should be ignored, only accept lines with URLs
+                return ignore_urls and url_pattern.search(line) is not None
+
             url_pattern = re.compile('https?|ftp|mailto://')
-            body_length_ok = all(
-                [
-                    (
-                        len(x) <= max_line_length
-                        if url_pattern.search(x) is None
-                        else ignore_urls is True
-                    )
-                    for x in body_lines
-                ]
-            )
+            body_length_ok = all([check_line(line) for line in body_lines])
 
         # Smart check body: if there are a lot of changes on a commit
         # there should be a body, not just a subject
