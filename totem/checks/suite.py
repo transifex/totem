@@ -1,3 +1,5 @@
+from typing import List
+
 from totem.checks.config import CheckConfig, Config
 from totem.checks.content import BaseGitContentProviderFactory
 from totem.checks.core import CheckFactory
@@ -49,16 +51,19 @@ class CheckSuite:
         This is the main point of the application where the actual magic happens.
         """
         for check_type, config in self.config.check_configs.items():
-            result = self._run_check(config, self._check_factory)
-            self.results.add(result)
+            results = self._run_check(config, self._check_factory)
+            for r in results:
+                self.results.add(r)
 
-    def _run_check(self, config: CheckConfig, factory: CheckFactory) -> CheckResult:
+    def _run_check(
+        self, config: CheckConfig, factory: CheckFactory
+    ) -> List[CheckResult]:
         """Execute a check for the given configuration.
 
         :param CheckConfig config: the configuration of the check
         :param CheckFactory factory: the factory to use to create checks
-        :return: the result of the check
-        :rtype: CheckResult
+        :return: a list of CheckResult objects
+        :rtype: List
         """
         # For every configuration object a proper content provider
         # is created and then given to a check object that knows
@@ -69,7 +74,7 @@ class CheckSuite:
                 'Check with type "{}" could not be created. '
                 'Make sure that CheckFactory knows how to create it'
             ).format(config.check_type)
-            return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)
+            return [CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)]
 
         try:
             content_provider = self._content_provider_factory.create(check)
@@ -82,8 +87,8 @@ class CheckSuite:
                     check.check_type, factory_type.__module__, factory_type.__name__
                 )
 
-                return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)
+                return [CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=msg)]
             content = content_provider.get_content()
             return check.run(content)
         except Exception as e:
-            return CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=str(e))
+            return [CheckResult(config, STATUS_ERROR, ERROR_GENERIC, message=str(e))]

@@ -1,5 +1,5 @@
 import re
-from typing import List, Set, Union
+from typing import List, Union
 
 from totem.checks.core import Check
 from totem.checks.results import (
@@ -34,34 +34,40 @@ PR_TYPES_CHECKS = (
 class BranchNameCheck(Check):
     """Checks whether or not a branch name follows a certain format."""
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if a branch name follows a certain format.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         pattern = self._from_config('pattern')
         branch_name = content.get('branch')
 
         if branch_name is None:
-            return self._get_success(
-                message=(
-                    'Branch name not available, skipping branch name validation '
-                    '(could be a detached head)'
+            return [
+                self._get_success(
+                    message=(
+                        'Branch name not available, skipping branch name validation '
+                        '(could be a detached head)'
+                    )
                 )
-            )
+            ]
 
         if not branch_name:
-            return self._get_error(
-                ERROR_INVALID_CONTENT, message='Branch name not defined or empty'
-            )
+            return [
+                self._get_error(
+                    ERROR_INVALID_CONTENT, message='Branch name not defined or empty'
+                )
+            ]
 
         if not pattern:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='Branch name regex pattern not defined or empty',
-            )
+            return [
+                self._get_error(
+                    ERROR_INVALID_CONFIG,
+                    message='Branch name regex pattern not defined or empty',
+                )
+            ]
 
         success = re.search(pattern, branch_name) is not None
         if not success:
@@ -71,9 +77,9 @@ class BranchNameCheck(Check):
                     branch_name, pattern, self._from_config('pattern_descr')
                 )
             )
-            return self._get_failure(ERROR_INVALID_BRANCH_NAME, message=msg)
+            return [self._get_failure(ERROR_INVALID_BRANCH_NAME, message=msg)]
 
-        return self._get_success()
+        return [self._get_success()]
 
     def _default_config(self, name: str) -> Union[str, None]:
         if name == 'pattern':
@@ -88,35 +94,39 @@ class BranchNameCheck(Check):
 class PRTitleCheck(Check):
     """Checks whether or not the title of a PR follows a certain format."""
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if a PR title follows a certain format.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         pattern = self._from_config('pattern')
         title = content.get('title')
 
         if not title:
-            return self._get_error(
-                ERROR_INVALID_CONTENT, message='PR title not defined or empty'
-            )
+            return [
+                self._get_error(
+                    ERROR_INVALID_CONTENT, message='PR title not defined or empty'
+                )
+            ]
 
         if not pattern:
-            return self._get_error(
-                ERROR_INVALID_CONFIG,
-                message='PR title regex pattern not defined or empty',
-            )
+            return [
+                self._get_error(
+                    ERROR_INVALID_CONFIG,
+                    message='PR title regex pattern not defined or empty',
+                )
+            ]
 
         success = re.search(pattern, title) is not None
         if not success:
             msg = 'PR title "{}" does not match pattern: "{}". Explanation: {}'.format(
                 title, pattern, self._from_config('pattern_descr')
             )
-            return self._get_failure(ERROR_INVALID_PR_TITLE, message=msg)
+            return [self._get_failure(ERROR_INVALID_PR_TITLE, message=msg)]
 
-        return self._get_success()
+        return [self._get_success()]
 
     def _default_config(self, name: str) -> Union[str, None]:
         if name == 'pattern':
@@ -140,23 +150,25 @@ class PRBodyChecklistCheck(Check):
     It uses markdown syntax.
     """
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if the body of a PR contains unchecked items.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         body = content.get('body', '')
 
         matches = re.findall('[-*] \[ \]', body)
         if matches:
-            return self._get_failure(
-                ERROR_UNFINISHED_CHECKLIST,
-                message='Found {} unfinished checklist items'.format(len(matches)),
-            )
+            return [
+                self._get_failure(
+                    ERROR_UNFINISHED_CHECKLIST,
+                    message='Found {} unfinished checklist items'.format(len(matches)),
+                )
+            ]
 
-        return self._get_success()
+        return [self._get_success()]
 
 
 class PRBodyIncludesCheck(Check):
@@ -169,13 +181,13 @@ class PRBodyIncludesCheck(Check):
     and the result it returns includes all the ones that failed.
     """
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if the body of a PR contains specific text.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed, successful if
             all of the strings are included, failed otherwise
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         body = content.get('body')
 
@@ -187,14 +199,16 @@ class PRBodyIncludesCheck(Check):
                 failed_items.append(pattern)
 
         if failed_items:
-            return self._get_failure(
-                ERROR_MISSING_PR_BODY_TEXT,
-                message='Required strings in PR body are missing: {}'.format(
-                    ', '.join(['"{}"'.format(x) for x in failed_items])
-                ),
-            )
+            return [
+                self._get_failure(
+                    ERROR_MISSING_PR_BODY_TEXT,
+                    message='Required strings in PR body are missing: {}'.format(
+                        ', '.join(['"{}"'.format(x) for x in failed_items])
+                    ),
+                )
+            ]
 
-        return self._get_success()
+        return [self._get_success()]
 
 
 class PRBodyExcludesCheck(Check):
@@ -207,13 +221,13 @@ class PRBodyExcludesCheck(Check):
     and the result it returns includes all the ones that failed.
     """
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if the body of a PR contains specific text.
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed, successful if
             none of the strings are included, failed otherwise
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         body = content.get('body')
 
@@ -225,14 +239,16 @@ class PRBodyExcludesCheck(Check):
                 failed_items.append(pattern)
 
         if failed_items:
-            return self._get_failure(
-                ERROR_FORBIDDEN_PR_BODY_TEXT,
-                message='Forbidden strings found in PR body: {}'.format(
-                    ', '.join(['"{}"'.format(x) for x in failed_items])
-                ),
-            )
+            return [
+                self._get_failure(
+                    ERROR_FORBIDDEN_PR_BODY_TEXT,
+                    message='Forbidden strings found in PR body: {}'.format(
+                        ', '.join(['"{}"'.format(x) for x in failed_items])
+                    ),
+                )
+            ]
 
-        return self._get_success()
+        return [self._get_success()]
 
 
 class CommitMessagesCheck(Check):
@@ -241,13 +257,14 @@ class CommitMessagesCheck(Check):
     # These keys are in each failed commit dict
     DEFAULT_KEYS = ('sha', 'url', 'commit_order')
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Check if the commit messages of a PR are properly formatted.
 
         It checks for the following:
          - Subject should follow a certain pattern
          - Subject should have a maximum length
          - Each line of the body (if exists) should have a maximum length
+           (unless it includes a URL-looking string, and ignore_urls is enabled)
          - If there are a lot of changes in the commit, there should be a body
            with a certain minimum of total lines
 
@@ -260,7 +277,7 @@ class CommitMessagesCheck(Check):
 
         :param dict content: contains parameters with the actual content to check
         :return: the result of the check that was performed
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         commits = content.get('commits', [])
 
@@ -275,32 +292,28 @@ class CommitMessagesCheck(Check):
                     failed_items.append(errors)
 
         except KeyError as e:
-            return self._get_error(
-                ERROR_INVALID_CONTENT,
-                message='Content for commit checks has invalid structure: '
-                'Missing key: {}'.format(e),
-            )
+            return [
+                self._get_error(
+                    ERROR_INVALID_CONTENT,
+                    message='Content for commit checks has invalid structure: '
+                    'Missing key: {}'.format(e),
+                )
+            ]
 
         if failed_items:
-            # Find the IDs of all errors that occurred in the failed commit messages
-            # Do that by combining all keys from each error and removing the
-            # default keys that appear in each message, and removing duplicates
-            # by using a set
-            keys: Set[str] = set()
-            for error in failed_items:
-                keys.update(error.keys())
-            for default in CommitMessagesCheck.DEFAULT_KEYS:
-                keys.remove(default)
-            return self._get_failure(
-                ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
-                message='Found {} commit message(s) that do not follow '
-                'the expected format (errors: {})'.format(
-                    len(failed_items), ', '.join(['"{}"'.format(k) for k in keys])
-                ),
-                errors=failed_items,
-            )
+            results = []
+            for item in failed_items:
+                results.append(
+                    self._get_failure(
+                        ERROR_INVALID_COMMIT_MESSAGE_FORMAT,
+                        message='Commit message does not follow the expected format',
+                        errors=[item],
+                    )
+                )
 
-        return self._get_success()
+            return results
+
+        return [self._get_success()]
 
     def _check_message(self, commit: dict) -> Union[dict, None]:
         """Check the given commit message against the rules defined in the config
