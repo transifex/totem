@@ -364,10 +364,27 @@ class CommitMessagesCheck(Check):
         # Check body line length
         body_config = self._from_config('body')
         max_line_length = body_config.get('max_line_length', None)
+
+        # Don't check max length
         if max_line_length is None:
             body_length_ok = True
+
+        # Do check max length per line
+        # If ignore_urls is True, ignore lines that have a part that looks like
+        # a URL
         else:
-            body_length_ok = all([len(x) <= max_line_length for x in body_lines])
+            ignore_urls = body_config.get('ignore_urls', True)
+            url_pattern = re.compile('https?|ftp|mailto://')
+            body_length_ok = all(
+                [
+                    (
+                        len(x) <= max_line_length
+                        if url_pattern.search(x) is None
+                        else ignore_urls is True
+                    )
+                    for x in body_lines
+                ]
+            )
 
         # Smart check body: if there are a lot of changes on a commit
         # there should be a body, not just a subject
