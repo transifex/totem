@@ -1,5 +1,5 @@
 from totem.checks.checks import PR_TYPES_CHECKS
-from totem.checks.config import Config, ConfigFactory
+from totem.checks.config import CheckConfig, Config, ConfigFactory
 
 
 class TestConfig:
@@ -7,14 +7,14 @@ class TestConfig:
 
     def test_constructor(self):
         settings = {'doesnt': 'matter'}
-        check_configs = {'doesnt': 'matter'}
+        check_configs = [CheckConfig({'doesnt': 'matter'}, 'error')]
         config = Config(settings, check_configs)
 
         assert config.settings == settings
         assert config.check_configs == check_configs
 
     def test_default_pr_comment_report_property(self):
-        config = Config({}, {})
+        config = Config({}, [])
         assert config.pr_comment_report == {
             'enabled': True,
             'show_message': True,
@@ -23,7 +23,7 @@ class TestConfig:
         }
 
     def test_default_pr_console_report_property(self):
-        config = Config({}, {})
+        config = Config({}, [])
         assert config.pr_console_report == {
             'show_message': True,
             'show_empty_sections': True,
@@ -32,7 +32,7 @@ class TestConfig:
         }
 
     def test_default_local_console_report_property(self):
-        config = Config({}, {})
+        config = Config({}, [])
         assert config.local_console_report == {
             'show_message': True,
             'show_empty_sections': False,
@@ -42,7 +42,7 @@ class TestConfig:
 
     def test_pr_comment_property(self):
         settings = {'pr_comment_report': {'doesnt': 'matter'}}
-        config = Config(settings, {})
+        config = Config(settings, [])
         assert config.pr_comment_report == settings['pr_comment_report']
 
 
@@ -74,12 +74,12 @@ class TestConfigFactory:
         # Test checks
         check_configs = config.check_configs
 
-        branch_name = check_configs['branch_name']
+        branch_name = check_configs[0]
         assert branch_name.check_type == 'branch_name'
         assert branch_name.failure_level == 'warning'
         assert branch_name.options == {'pattern': '^TX-[0-9]+\-[\w\d\-]+$'}
 
-        doesnt_matter = check_configs['doesnt_matter']
+        doesnt_matter = check_configs[1]
         assert doesnt_matter.check_type == 'doesnt_matter'
         assert doesnt_matter.failure_level == 'error'
         assert doesnt_matter.options == {}
@@ -114,13 +114,12 @@ class TestConfigFactory:
 
         # Test checks
         check_configs = config.check_configs
-
-        branch_name = check_configs['branch_name']
+        branch_name = check_configs[0]
         assert branch_name.check_type == 'branch_name'
         assert branch_name.failure_level == 'warning'
         assert branch_name.options == {'pattern': '^TX-[0-9]+\-[\w\d\-]+$'}
 
-        doesnt_matter = check_configs['doesnt_matter']
+        doesnt_matter = check_configs[1]
         assert doesnt_matter.check_type == 'doesnt_matter'
         assert doesnt_matter.failure_level == 'error'
         assert doesnt_matter.options == {}

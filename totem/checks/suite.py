@@ -45,7 +45,7 @@ class CheckSuite:
         self._check_factory = check_factory
         self.config = config
 
-        self.included_check_ids = checks or self.config.check_configs.keys()
+        self.included_check_ids = checks or self.config.check_config_types
         self.results = CheckSuiteResults()
 
     def run(self):
@@ -54,7 +54,8 @@ class CheckSuite:
         Checks are executed synchronously, one by one.
         This is the main point of the application where the actual magic happens.
         """
-        for check_type, config in self.config.check_configs.items():
+        for config in self.config.check_configs:
+            check_type = config.check_type
             if check_type not in self.included_check_ids:
                 print('Ignoring check "{}"'.format(check_type))
                 continue

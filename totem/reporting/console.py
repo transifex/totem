@@ -65,7 +65,7 @@ class BaseConsoleReport:
         :param Config config: the configuration that will be used
         :param str pr_url: the URL of the pull request
         """
-        check_types = config.check_configs.keys()
+        check_types = config.check_config_types
         builder = StringBuilder()
         builder.add()
         builder.add(
