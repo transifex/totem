@@ -396,7 +396,7 @@ class CommitMessagesCheck(Check):
                 # Otherwise, and if URLs should be ignored, only accept lines with URLs
                 return ignore_urls and url_pattern.search(line) is not None
 
-            url_pattern = re.compile('https?|ftp|mailto://')
+            url_pattern = re.compile('https?|ftp://')
             body_length_ok = all([check_line(line) for line in body_lines])
 
         # Smart check body: if there are a lot of changes on a commit

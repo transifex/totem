@@ -26,10 +26,10 @@ class TestBranchNameCheck:
 
     def test_default_config(self):
         check = BranchNameCheck(CheckConfig('branch_name', 'error'))
-        result = check.run({'branch': 'some-thing-3-yo'})
+        result = check.run({'branch': 'some-thing-3-yo'})[0]
         assert result.success is True
 
-        result = check.run({'branch': 'invalid##name'})
+        result = check.run({'branch': 'invalid##name'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_BRANCH_NAME
 
@@ -37,20 +37,20 @@ class TestBranchNameCheck:
         check = BranchNameCheck(
             CheckConfig('branch_name', 'error', pattern='^[abc99]+$')
         )
-        result = check.run({'branch': 'ab9c9bb9ca9aa'})
+        result = check.run({'branch': 'ab9c9bb9ca9aa'})[0]
         assert result.success is True
 
-        result = check.run({'branch': 'ab9c9bb9-ca9aa'})
+        result = check.run({'branch': 'ab9c9bb9-ca9aa'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_BRANCH_NAME
 
-        result = check.run({'branch': 'db9c9bb9ca9aa'})
+        result = check.run({'branch': 'db9c9bb9ca9aa'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_BRANCH_NAME
 
     def test_missing_branch_returns_success(self):
         check = BranchNameCheck(CheckConfig('branch_name', 'error'))
-        result = check.run({'branch': None})
+        result = check.run({'branch': None})[0]
         assert result.status == STATUS_PASS
         assert result.details['message'] == (
             'Branch name not available, skipping branch name validation '
@@ -59,7 +59,7 @@ class TestBranchNameCheck:
 
     def test_empty_branch_returns_error(self):
         check = BranchNameCheck(CheckConfig('branch_name', 'error'))
-        result = check.run({'branch': ''})
+        result = check.run({'branch': ''})[0]
         assert result.status == STATUS_ERROR
         assert result.error_code == ERROR_INVALID_CONTENT
         assert result.details['message'] == 'Branch name not defined or empty'
@@ -69,7 +69,7 @@ class TestBranchNameCheck:
             check = BranchNameCheck(
                 CheckConfig('branch_name', 'error', pattern=pattern)
             )
-            result = check.run({'branch': 'something'})
+            result = check.run({'branch': 'something'})[0]
             assert result.status == STATUS_ERROR
             assert result.error_code == ERROR_INVALID_CONFIG
             assert (
@@ -84,40 +84,40 @@ class TestPRTItle:
     def test_default_config(self):
         check = PRTitleCheck(CheckConfig('whatever', 'error'))
 
-        result = check.run({'title': 'Upper first letter - 3233'})
+        result = check.run({'title': 'Upper first letter - 3233'})[0]
         assert result.success is True
 
-        result = check.run({'title': 'ALL CAPS'})
+        result = check.run({'title': 'ALL CAPS'})[0]
         assert result.success is True
 
-        result = check.run({'title': 'lowercase THEN CAPS'})
+        result = check.run({'title': 'lowercase THEN CAPS'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_PR_TITLE
 
     def test_custom_config(self):
         check = PRTitleCheck(CheckConfig('title', 'error', pattern='^[abc99]+$'))
 
-        result = check.run({'title': 'ab9c9bb9ca9aa'})
+        result = check.run({'title': 'ab9c9bb9ca9aa'})[0]
         assert result.success is True
 
-        result = check.run({'title': 'ab9c9bb9-ca9aa'})
+        result = check.run({'title': 'ab9c9bb9-ca9aa'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_PR_TITLE
 
-        result = check.run({'title': 'db9c9bb9ca9aa'})
+        result = check.run({'title': 'db9c9bb9ca9aa'})[0]
         assert result.success is False
         assert result.error_code == ERROR_INVALID_PR_TITLE
 
     def test_missing_title_returns_error(self):
         check = PRTitleCheck(CheckConfig('title', 'error'))
-        result = check.run({})  # no 'title' entry
+        result = check.run({})[0]  # no 'title' entry
         assert result.status == STATUS_ERROR
         assert result.error_code == ERROR_INVALID_CONTENT
         assert result.details['message'] == 'PR title not defined or empty'
 
     def test_missing_pattern_returns_error(self):
         check = PRTitleCheck(CheckConfig('title', 'error', pattern=''))
-        result = check.run({'title': 'My title'})
+        result = check.run({'title': 'My title'})[0]
         assert result.status == STATUS_ERROR
         assert result.error_code == ERROR_INVALID_CONFIG
         assert (
@@ -131,17 +131,17 @@ class TestPRBodyChecklist:
     def test_all(self):
         check = PRBodyChecklistCheck(CheckConfig('whatever', 'error'))
 
-        result = check.run({'body': 'This is something. \n- [x]\n- [x]\n\n* [x]'})
+        result = check.run({'body': 'This is something. \n- [x]\n- [x]\n\n* [x]'})[0]
         assert result.success is True
 
-        result = check.run({'body': 'This is something. \n- []'})
+        result = check.run({'body': 'This is something. \n- []'})[0]
         assert result.success is True
 
-        result = check.run({'body': 'This is something. \n- [ ]\n- [x]\n\n* [x]'})
+        result = check.run({'body': 'This is something. \n- [ ]\n- [x]\n\n* [x]'})[0]
         assert result.success is False
         assert result.error_code == ERROR_UNFINISHED_CHECKLIST
 
-        result = check.run({'body': 'This is something. \n- [x]\n- [x]\n\n* [ ]'})
+        result = check.run({'body': 'This is something. \n- [x]\n- [x]\n\n* [ ]'})[0]
         assert result.success is False
         assert result.error_code == ERROR_UNFINISHED_CHECKLIST
 
@@ -154,21 +154,21 @@ class TestPRBodyIncludes:
             CheckConfig('whatever', 'error', patterns=['must-be', 'present'])
         )
 
-        result = check.run({'body': 'Things must-be present'})
+        result = check.run({'body': 'Things must-be present'})[0]
         assert result.success is True
 
-        result = check.run({'body': 'A good present is a must-be'})
+        result = check.run({'body': 'A good present is a must-be'})[0]
         assert result.success is True
 
-        result = check.run({'body': 'present must be'})
+        result = check.run({'body': 'present must be'})[0]
         assert result.success is False
         assert result.error_code == ERROR_MISSING_PR_BODY_TEXT
 
-        result = check.run({'body': 'must-be pres-ent'})
+        result = check.run({'body': 'must-be pres-ent'})[0]
         assert result.success is False
         assert result.error_code == ERROR_MISSING_PR_BODY_TEXT
 
-        result = check.run({'body': 'totally unrelated'})
+        result = check.run({'body': 'totally unrelated'})[0]
         assert result.success is False
         assert result.error_code == ERROR_MISSING_PR_BODY_TEXT
 
@@ -181,18 +181,18 @@ class TestPRBodyExcludes:
             CheckConfig('whatever', 'error', patterns=['forbidden', 'fruit'])
         )
 
-        result = check.run({'body': 'Something about something else'})
+        result = check.run({'body': 'Something about something else'})[0]
         assert result.success is True
 
-        result = check.run({'body': 'I love eating fruit'})
+        result = check.run({'body': 'I love eating fruit'})[0]
         assert result.success is False
         assert result.error_code == ERROR_FORBIDDEN_PR_BODY_TEXT
 
-        result = check.run({'body': 'This is forbidden'})
+        result = check.run({'body': 'This is forbidden'})[0]
         assert result.success is False
         assert result.error_code == ERROR_FORBIDDEN_PR_BODY_TEXT
 
-        result = check.run({'body': 'Fruit is forbidden here'})
+        result = check.run({'body': 'Fruit is forbidden here'})[0]
         assert result.success is False
         assert result.error_code == ERROR_FORBIDDEN_PR_BODY_TEXT
 
@@ -223,7 +223,7 @@ class TestCommitMessages:
                     },
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_default_at_threshold_pass(self, default_check):
@@ -239,7 +239,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_subject_too_long_fails(self, default_check):
@@ -249,7 +249,7 @@ class TestCommitMessages:
                     {'stats': {'total': 4}, 'message': 'X' * 51, 'sha': 'aa', 'url': ''}
                 ]
             }
-        )
+        )[0]
         assert result.success is False
 
     def test_subject_too_short_fails(self, default_check):
@@ -259,7 +259,7 @@ class TestCommitMessages:
                     {'stats': {'total': 4}, 'message': 'X' * 5, 'sha': 'aa', 'url': ''}
                 ]
             }
-        )
+        )[0]
         assert result.success is False
 
     def test_default_body_line_too_long_fails(self, default_check):
@@ -274,7 +274,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is False
 
     def test_default_too_many_changes_without_body_fails(self, default_check):
@@ -289,7 +289,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is False
 
     def test_default_many_changes_with_body_pass(self, default_check):
@@ -304,7 +304,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     @pytest.fixture
@@ -337,7 +337,7 @@ class TestCommitMessages:
                     },
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_custom_at_threshold_pass(self, custom_check):
@@ -359,11 +359,11 @@ class TestCommitMessages:
                     },
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_custom_subject_too_long_fails(self, custom_check):
-        result = custom_check.run(
+        results = custom_check.run(
             {
                 'commits': [
                     {'stats': {'total': 4}, 'message': 'X' * 2, 'sha': 'aa', 'url': ''},
@@ -371,10 +371,17 @@ class TestCommitMessages:
                 ]
             }
         )
-        assert result.success is False
+        assert results[0].success is False
+        assert 'error_subject_pattern' in results[0].details['errors'][0]
+        assert len(results[0].details['errors']) == 1
+
+        assert results[1].success is False
+        assert 'error_subject_pattern' in results[1].details['errors'][0]
+        assert 'error_subject_length' in results[1].details['errors'][0]
+        assert len(results[1].details['errors']) == 1
 
     def test_custom_body_line_too_long_fails(self, custom_check):
-        result = custom_check.run(
+        results = custom_check.run(
             {
                 'commits': [
                     {
@@ -392,28 +399,39 @@ class TestCommitMessages:
                 ]
             }
         )
-        assert result.success is False
+        assert results[0].success is False
+        assert 'error_subject_pattern' in results[0].details['errors'][0]
+        assert 'error_body_length' in results[0].details['errors'][0]
+        assert len(results[0].details['errors']) == 1
+
+        assert results[1].success is False
+        assert 'error_subject_pattern' in results[1].details['errors'][0]
+        assert len(results[1].details['errors']) == 1
 
     def test_custom_too_many_changes_without_body_fails(self, custom_check):
-        result = custom_check.run(
+        results = custom_check.run(
             {
                 'commits': [
                     {
                         'stats': {'total': 11},
-                        'message': '{}'.format('X' * 5),
+                        'message': 'subject\n\nsomething\nhahaha',
                         'sha': 'aa',
                         'url': '',
                     },
                     {
-                        'stats': {'total': 10},
-                        'message': '{}'.format('X' * 5),
+                        'stats': {'total': 3},
+                        'message': 'subj\n\nLine 1\nLine 2\nLine 3',
                         'sha': 'aa',
                         'url': '',
                     },
                 ]
             }
         )
-        assert result.success is False
+        assert results[0].success is False
+        assert 'error_smart_body_size' in results[0].details['errors'][0]
+        assert len(results[0].details['errors']) == 1
+
+        assert len(results) == 1
 
     def test_custom_many_changes_with_body_pass(self, custom_check):
         result = custom_check.run(
@@ -428,8 +446,9 @@ class TestCommitMessages:
                     {'stats': {'total': 4}, 'message': 'x' * 5, 'sha': 'aa', 'url': ''},
                 ]
             }
-        )
+        )[0]
         assert result.success is True
+        assert 'errors' not in result.details
 
     @pytest.fixture()
     def custom_config(self):
@@ -452,7 +471,7 @@ class TestCommitMessages:
                     {'stats': {'total': 2}, 'message': 'x' * 1, 'sha': 'aa', 'url': ''}
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_no_subject_max_length_option_ignored(self, custom_config):
@@ -471,7 +490,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_no_subject_pattern_option_ignored(self, custom_config):
@@ -485,7 +504,7 @@ class TestCommitMessages:
                     {'stats': {'total': 2}, 'message': 'A82%@$', 'sha': 'aa', 'url': ''}
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_no_body_max_line_length_option_ignored(self, custom_config):
@@ -504,7 +523,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_no_body_smart_require_min_body_lines_option_ignored(self, custom_config):
@@ -523,7 +542,7 @@ class TestCommitMessages:
                     }
                 ]
             }
-        )
+        )[0]
         assert result.success is True
 
     def test_missing_key_from_config_fails_with_error(self, custom_config):
@@ -531,8 +550,116 @@ class TestCommitMessages:
         the check should fail with an error."""
         del custom_config['subject']
         check = CommitMessagesCheck(CheckConfig('whatever', 'error', **custom_config))
-        result = check.run({'commits': [{'message': 'xxxxx', 'sha': 'aa', 'url': ''}]})
+        result = check.run({'commits': [{'message': 'xxxxx', 'sha': 'aa', 'url': ''}]})[
+            0
+        ]
+
         assert result.success is False
         assert result.status is 'error'
         assert result.error_code is 'invalid_content'
         assert "Missing key: 'stats'" in result.details['message']
+
+    def test_url_in_message_ignores_max_length(self, custom_check):
+        """Test that body lines with URLs ignore the max length limit."""
+        urls = (
+            'http://www.example.com',
+            'https://www.example.com',
+            'ftp://www.example.com',
+        )
+        for url in urls:
+            result = custom_check.run(
+                {
+                    'commits': [
+                        {
+                            'stats': {'total': 2},
+                            'message': 'subj\n\nThis is a long url: {}'.format(url),
+                            'sha': 'aa',
+                            'url': '',
+                        },
+                        {
+                            'stats': {'total': 2},
+                            'message': 'x' * 5,
+                            'sha': 'aa',
+                            'url': '',
+                        },
+                    ]
+                }
+            )[0]
+            assert result.success is True
+            assert 'errors' not in result.details
+
+    def test_invalid_url_formats_in_message_respect_max_length(self, custom_check):
+        """Test that invalid URLs, or those that do not follow a specific format
+        are not treated as a special case."""
+        urls = ('www.example.com', 'invalid:/www.example.com')
+        for url in urls:
+            result = custom_check.run(
+                {
+                    'commits': [
+                        {
+                            'stats': {'total': 2},
+                            'message': 'subj\n\nThis is a long url: {}'.format(url),
+                            'sha': 'aa',
+                            'url': '',
+                        },
+                        {
+                            'stats': {'total': 2},
+                            'message': 'x' * 5,
+                            'sha': 'aa',
+                            'url': '',
+                        },
+                    ]
+                }
+            )[0]
+            assert result.success is False
+            assert 'error_body_length' in result.details['errors'][0]
+            assert len(result.details['errors']) == 1
+
+    def test_global_ignore_flag_in_body_ignores_all_errors(self, custom_check):
+        result = custom_check.run(
+            {
+                'commits': [
+                    {
+                        'stats': {'total': 2},
+                        'message': 'SUBJECT IS CAPS AND TOO LONG\n\n[!totem]',
+                        'sha': 'aa',
+                        'url': '',
+                    }
+                ]
+            }
+        )[0]
+        assert result.success is True
+        assert 'errors' not in result.details
+
+    def test_global_ignore_flag_in_subject_does_nothing(self, custom_check):
+        result = custom_check.run(
+            {
+                'commits': [
+                    {
+                        'stats': {'total': 2},
+                        'message': 'SUBJECT IS CAPS AND TOO LONG[!totem]',
+                        'sha': 'aa',
+                        'url': '',
+                    }
+                ]
+            }
+        )[0]
+        assert result.success is False
+        assert 'error_subject_length' in result.details['errors'][0]
+        assert len(result.details['errors']) == 1
+
+    def test_line_ignore_flag_ignores_line_errors(self, custom_check):
+        result = custom_check.run(
+            {
+                'commits': [
+                    {
+                        'stats': {'total': 2},
+                        'message': 'subj\n\nThis is a very long line indeed!! #!totem',
+                        'sha': 'aa',
+                        'url': '',
+                    }
+                ]
+            }
+        )[0]
+        assert result.success is True
+        assert 'errors' not in result.details
