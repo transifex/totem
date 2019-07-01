@@ -1,4 +1,4 @@
-from typing import Type, Union
+from typing import List, Type, Union
 
 from totem.checks.config import CheckConfig
 from totem.checks.results import STATUS_ERROR, STATUS_FAIL, STATUS_PASS, CheckResult
@@ -25,13 +25,13 @@ class Check:
         """
         self._config = config
 
-    def run(self, content: dict) -> CheckResult:
+    def run(self, content: dict) -> List[CheckResult]:
         """Execute the check for the current parameters and return the result.
 
         :param dict content: contains parameters with the actual content to check,
             e.g. the commit message string for a checker that deals with commit messages
         :return: the result of performing the check
-        :rtype: CheckResult
+        :rtype: List[CheckResult]
         """
         raise NotImplementedError()
 
@@ -65,12 +65,19 @@ class Check:
         """
         return CheckResult(self._config, STATUS_PASS, **details)
 
-    def _get_failure(self, error_code: str, message: str, **details) -> CheckResult:
+    def _get_failure(
+        self, error_code: str, message: str, custom_level: str = None, **details
+    ) -> CheckResult:
         """Return a failed result.
 
         This means that the check was executed and failed."""
         return CheckResult(
-            self._config, STATUS_FAIL, error_code=error_code, message=message, **details
+            self._config,
+            STATUS_FAIL,
+            error_code=error_code,
+            message=message,
+            custom_level=custom_level,
+            **details,
         )
 
     def _get_error(self, error_code: str, message: str, **details) -> CheckResult:

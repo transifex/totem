@@ -14,6 +14,7 @@ Currently it supports Github Pull Requests only, but can also be used locally.
 - Configurable: you can only enable the checks you want, and define the configuration parameters for each check
 - Detailed report in the console, makes it easy to spot issues
 - Compact summary shown as a comment created on the Pull Request, with configurable content (disabled by default)
+- Ability to disable all checks on a specific commit or a specific line of a commit message body
 
 
 # Checks
@@ -39,6 +40,37 @@ With a custom configuration, you can define which checks will be executed. All o
 If a check is executed but fails to pass, it can either provide a failed status check (exit status = 1) or simply print out a warning.
 The former can be used in order to prevent a Pull Request from being merged, a local commit to be completed, or local changes to be pushed to the remote, until all Totem checks are fixed.
 The latter is mainly used as a sign that something might not be right, and can be useful when comitting in or pushing from a local repo, or when reviewing a Pull Request. The warning level is necessary because in some repos a rule may not be always applicable, so it should be judged on a case-by-case basis.
+
+## Manual ignore
+The configuration file defines which checks will run. 
+
+However, if you want to disable the checks that run on a specific commit, you can use one of two special flags (`[!totem]`, `#!totem`)  as follows:
+
+### Ignoring checks on the whole commit
+The following commit message will pass, although the subject and the first line of the body are both too long. The reason it doesn't fail is the global `[!totem]` flag, which ignores all errors on a particual commit message.
+
+Note that this flag needs to be on the message body; it does nothing if added in the message subject.
+  
+```
+this is the subject and its too long, also doesn't start with a capital letter
+
+This line is also way too long but you know what, it doesn't matter because the message
+includes this special (global) ignore flag: [!totem]
+```
+
+### Ignoring checks on a specific body line
+The following commit message will pass, although the first line of the message body is too long. The reason it does not fail is the `#!totem` flag. 
+```
+This is the subject
+
+This line includes a_very_long_string_that_cannot_be_broken_down_into_smaller_chunks #!totem
+but this line is just fine and should be checked.
+```
+
+### URLs
+Please note that URLs are handled as special cases, so you don't need to add an ignore flag if a URL makes a line too long; checks are automatically ignored if a line contains a URL.
+
+Supported formats are: `http://...`, `https://...`, `ftp://...`.
 
 
 # Installation
@@ -174,7 +206,7 @@ This way, totem will run every time you call `git push`, and will abort the comm
 
 
 # Configuration
-This is a sample configuration that contains all available options:
+The following is a sample of configuration that contains all available options.
 
 ```yaml
 settings:
@@ -227,6 +259,30 @@ checks:
         min_changes: 100
         min_body_lines: 1
     failure_level: error
+```
+
+Note that the `checks` part supports both dictionaries and lists. The example above uses a dictionary, while the one below uses a list. 
+
+The list structure allows you to include more multiple checks of the same type, which can be convenient in certain cases.
+
+Here is a sample of just the `checks` part that contains 2 different `pr_body_excludes` checks, one of which is reported as an error and the other as a warning. 
+
+```yaml
+checks:
+  - type: branch_name
+    pattern: ^[\w\d\-]+$
+    pattern_descr: Branch name must include lowercase characters, digits and dashes, e.g. `update-something`
+    failure_level: error
+  - type: pr_body_excludes
+    patterns:
+    - error_pattern1
+    - error_pattern2
+    failure_level: error
+  - type: pr_body_excludes
+    patterns:
+    - warning_pattern1
+    - warning_pattern2
+    failure_level: warning
 ```
 
 # Sample report

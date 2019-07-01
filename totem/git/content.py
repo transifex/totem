@@ -23,7 +23,7 @@ class BranchContentProvider(BaseContentProvider):
             branch_name = None
         else:
             branch_name = repo.head.ref.name
-        
+
         return {'branch': branch_name}
 
 
@@ -58,12 +58,19 @@ class CommitsContentProvider(BaseContentProvider):
             branch_name = repo.head.commit.hexsha
         else:
             branch_name = repo.head.ref.name
-        last_commit = repo.commit(branch_name)
-        parent_ref = last_commit.parents[0]
 
         # We only want the commits of the current branch, from the parent
         # to the tip of the branch, e.g. master...my-feature-branch
-        rev = '{}...{}'.format(parent_ref, branch_name)
+        # In most cases, the first commit of the branch should be the one
+        # with more than 1 parents.
+        branch_commits = list(repo.iter_commits(branch_name, max_count=50))
+        first_branch_commit = repo.commit(branch_name).parents[0]  # fallback
+        for commit in branch_commits:
+            if len(commit.parents) > 1:
+                first_branch_commit = commit
+                break
+
+        rev = '{}...{}'.format(first_branch_commit, branch_name)
         commits = list(repo.iter_commits(rev, max_count=50, no_merges=True))
 
         return {

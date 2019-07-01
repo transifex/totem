@@ -22,7 +22,12 @@ class CheckResult:
     """Contains the results of a single Check that was performed."""
 
     def __init__(
-        self, config: CheckConfig, status: str, error_code: str = None, **details
+        self,
+        config: CheckConfig,
+        status: str,
+        error_code: str = None,
+        custom_level: str = None,
+        **details
     ):
         """Constructor.
 
@@ -35,6 +40,7 @@ class CheckResult:
         self.config = config
         self.status = status
         self.error_code = error_code
+        self.custom_level = custom_level
         self.details = details
 
     @property
@@ -49,7 +55,11 @@ class CheckResult:
 
         For example, if it should block merging or just show a warning message.
         """
-        return self.config.failure_level
+        return (
+            self.custom_level
+            if self.custom_level is not None
+            else self.config.failure_level
+        )
 
     def __str__(self) -> str:
         return 'CheckResult type={}, status={}, error_code={}, details={}'.format(

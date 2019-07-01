@@ -1,3 +1,5 @@
+from typing import List
+
 FAILURE_LEVEL_WARNING = 'warning'
 FAILURE_LEVEL_ERROR = 'error'
 
@@ -40,14 +42,12 @@ class Config:
     other parts of the behaviour of this tool.
     """
 
-    def __init__(self, settings: dict, check_configs: dict):
+    def __init__(self, settings: dict, check_configs: List[CheckConfig]):
         """Constructor.
 
         :param dict settings: a dictionary with all generic settings,
             containing a dict for each type of setting
-        :param dict check_configs: a dictionary with the configuration for
-            the checks, with the check type as the key and a CheckConfig object
-            as the value
+        :param List[CheckConfig] check_configs: a list of CheckConfig objects
         """
         self._settings = settings
         self._check_configs = check_configs
@@ -63,13 +63,18 @@ class Config:
         return self._settings
 
     @property
-    def check_configs(self) -> dict:
+    def check_config_types(self) -> List[str]:
+        """A list of all the unique check types that appear in this configuration."""
+        return list({x.check_type for x in self.check_configs})
+
+    @property
+    def check_configs(self) -> List[CheckConfig]:
         """Contains all the configuration for the checks,
         with the check type as the key and a CheckConfig object
         as the value
 
         :return: the configurations for all checks
-        :rtype: dict
+        :rtype: List[CheckConfig]
         """
         return self._check_configs
 
@@ -155,35 +160,42 @@ class ConfigFactory:
         settings = config_dict.get('settings', {})
         checks = config_dict.get('checks', {})
 
-        # If `include_pr` is True (e.g. when running on a local repo),
-        # exclude all PR-only checks
         from totem.checks.checks import PR_TYPES_CHECKS
 
-        if not include_pr:
-            checks = {
-                key: value
-                for key, value in checks.items()
-                if key not in PR_TYPES_CHECKS
-            }
+        check_configs = []
 
-        check_configs = {}
-        for check_type, config_dict in checks.items():
-            config = ConfigFactory._create_check_config(check_type, config_dict)
-            check_configs[check_type] = config
+        if isinstance(checks, dict):
+            for check_type, config_dict in checks.items():
+                # If `include_pr` is True (e.g. when running on a local repo),
+                # exclude all PR-only checks
+                if not include_pr and check_type in PR_TYPES_CHECKS:
+                    continue
+
+                config_dict['type'] = check_type
+                config = ConfigFactory._create_check_config(config_dict)
+                check_configs.append(config)
+
+        elif isinstance(checks, list):
+            for config_dict in checks:
+                # If `include_pr` is True (e.g. when running on a local repo),
+                # exclude all PR-only checks
+                if not include_pr and config_dict['type'] in PR_TYPES_CHECKS:
+                    continue
+                config = ConfigFactory._create_check_config(config_dict)
+                check_configs.append(config)
 
         return Config(settings, check_configs)
 
     @staticmethod
-    def _create_check_config(check_type: str, config_dict: dict) -> CheckConfig:
+    def _create_check_config(config_dict: dict) -> CheckConfig:
         """Create a CheckConfig object with the given type and parameters.
 
-        :param str check_type: a string that shows what type of check
-            this config is about
         :param dict config_dict: all configuration options
         :return: the config object
         :rtype: CheckConfig
         """
         config = dict(config_dict)
+        check_type = config.pop('type')
         failure_level = config.pop('failure_level', FAILURE_LEVEL_ERROR)
 
         return CheckConfig(check_type=check_type, failure_level=failure_level, **config)

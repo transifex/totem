@@ -36,6 +36,7 @@ checks:
       pattern_descr: Commit message subject must start with a capital letter and must not finish with a dot
     body:
       max_line_length: 72
+      ignore_urls: True
       smart_require:
         min_changes: 100
         min_body_lines: 1
