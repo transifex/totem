@@ -18,7 +18,7 @@ jobs:
         command: apk add git openssh-client && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
     - run:
         name: Install totem
-        command: pip install git+ssh://git@github.com/transifex/totem.git@devel
+        command: pip install .
     # The pull request string can be empty for 2 reasons:
     #   1. This is a merge commit, so there is currently no PR
     #   2. A bug of CircleCI does not populate the PR variable
