@@ -27,7 +27,7 @@ setup(
         'Click',
         'PyGitHub==1.40a4',
         'pyaml==17.12.1',
-        'GitPython==3.0.8',
+        'GitPython==3.1.32',
     ],
     py_modules=['cli'],
     entry_points={'console_scripts': ['totem=cli:main']},
